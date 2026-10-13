@@ -1,0 +1,17 @@
+{
+  "name": "slidedesk",
+  "version": "1.0.0",
+  "description": "Seminar-PDFs komfortabel präsentieren, offline im Browser. Teil der DESK Suite.",
+  "scripts": {
+    "vendor": "bash scripts/vendor.sh",
+    "build": "node scripts/build-assets.mjs",
+    "start": "python3 -m http.server 8080",
+    "test": "bash tests/run-all.sh"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "pdfjs-dist": "^6.4.299"
+  },
+  "private": true
+}

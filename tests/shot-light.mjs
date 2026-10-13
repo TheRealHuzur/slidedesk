@@ -1,0 +1,12 @@
+import { chromium, server, SHOTS, sleep } from './helpers.mjs';
+import { setupSeminar } from './setup.mjs';
+const srv = await server();
+const browser = await chromium.launch();
+const page = await (await browser.newContext({ viewport: { width: 1400, height: 900 } })).newPage();
+await setupSeminar(page);
+await page.evaluate(() => { localStorage.setItem('sd-theme', 'light'); });
+await page.reload(); await page.waitForSelector('.sem-name');
+await page.waitForFunction(() => document.querySelectorAll('img.thumb.ok').length >= 3);
+await sleep(500);
+await page.screenshot({ path: SHOTS + '/40-light.png' });
+await browser.close(); srv.kill();
