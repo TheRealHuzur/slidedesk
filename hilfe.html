@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SlideDESK Hilfe</title>
+  <meta name="description" content="Anleitung und Funktionsübersicht für SlideDESK">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/app.css">
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('sd-theme') || 'dark'; } catch (e) {}</script>
+  <style>
+    html, body { height: auto; }
+    body { overflow: visible; }
+    .doc-top { position: sticky; top: 0; z-index: 5; height: 54px; display: flex; align-items: center; gap: 16px; padding: 0 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
+    .doc-top a.btn { text-decoration: none; }
+    .doc { display: grid; grid-template-columns: 220px minmax(0, 760px); gap: 40px; max-width: 1060px; margin: 0 auto; padding: 32px 20px 80px; }
+    .toc { position: sticky; top: 86px; align-self: start; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+    .toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-radius: 7px; }
+    .toc a:hover { color: var(--text-strong); background: var(--panel-2); }
+    .doc h1 { font-size: 30px; margin-bottom: 6px; }
+    .doc h2 { font-size: 21px; margin: 44px 0 12px; padding-top: 6px; scroll-margin-top: 70px; }
+    .doc h3 { font-size: 16px; margin: 22px 0 8px; }
+    .doc p, .doc li { color: var(--text); }
+    .doc ul, .doc ol { padding-left: 22px; margin: 8px 0; }
+    .doc li { margin: 5px 0; }
+    .lead { font-size: 17px; color: var(--muted) !important; }
+    .steps { counter-reset: s; list-style: none; padding: 0 !important; display: grid; gap: 10px; }
+    .steps li { counter-increment: s; position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 12px 52px; margin: 0; }
+    .steps li::before { content: counter(s); position: absolute; left: 14px; top: 12px; width: 26px; height: 26px; border-radius: 99px; background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+    .steps strong { color: var(--text-strong); }
+    .note { background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 14px 0; }
+    .warn { background: rgba(245, 158, 11, .12); border-left-color: var(--warn); }
+    table.keys { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+    table.keys td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    table.keys td:first-child { white-space: nowrap; width: 1%; }
+    table.keys kbd { font-size: 12px; color: var(--text); }
+    .features { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
+    .feature { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+    .feature strong { display: block; color: var(--text-strong); margin-bottom: 4px; }
+    .feature span { color: var(--muted); font-size: 14px; }
+    .faq dt { font-weight: 600; color: var(--text-strong); margin-top: 16px; }
+    .faq dd { margin: 4px 0 0; color: var(--text); }
+    .foot { margin-top: 50px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 820px) { .doc { grid-template-columns: 1fr; } .toc { position: static; flex-direction: row; flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+  <header class="doc-top">
+    <span class="sd-logo">Slide<b>DESK</b></span>
+    <span class="muted">Hilfe</span>
+    <span class="spacer"></span>
+    <a class="btn small primary" href="./">Zur App</a>
+  </header>
+
+  <div class="doc">
+    <nav class="toc">
+      <a href="#start">Schnellstart</a>
+      <a href="#vorbereiten">Seminar vorbereiten</a>
+      <a href="#praesentieren">Präsentieren</a>
+      <a href="#tasten">Tasten</a>
+      <a href="#protokoll">Gezeigt-Protokoll</a>
+      <a href="#geraete">PC und Laptop</a>
+      <a href="#probleme">Wenn etwas hakt</a>
+      <a href="#funktionen">Funktionsliste</a>
+    </nav>
+
+    <main>
+      <h1>SlideDESK Hilfe</h1>
+      <p class="lead">Seminar-PDFs aus PowerPoint im Browser präsentieren: als Playlist aus deiner bestehenden Ablage, offline und ohne Account.</p>
+
+      <h2 id="start">Schnellstart</h2>
+      <ol class="steps">
+        <li><strong>SlideDESK in Edge oder Chrome öffnen.</strong> Andere Browser können nicht auf lokale Ordner zugreifen.</li>
+        <li><strong>Ablage freigeben.</strong> Den Oberordner wählen, in dem deine Seminarunterlagen liegen, zum Beispiel „Operatives Geschäft“ im Google Drive. Bei der Nachfrage „Bei jedem Besuch zulassen“ wählen, dann entfällt die Bestätigung künftig.</li>
+        <li><strong>Seminar anlegen.</strong> Links auf „+ Neu“, Namen eingeben.</li>
+        <li><strong>PDFs hinzufügen.</strong> „+ PDF aus der Ablage“ und PDFs aus beliebigen Unterordnern wählen oder per Dateinamen suchen. Alternativ PDFs aus dem Explorer auf den Ablauf ziehen.</li>
+        <li><strong>Präsentieren.</strong> Oben rechts den Modus wählen und auf „Präsentieren“ klicken. Mit den Pfeiltasten blättern, mit X beenden.</li>
+      </ol>
+      <div class="note">SlideDESK legt in deiner Ablage einen kleinen Ordner „SlideDESK“ mit der Datei <code>slidedesk.json</code> an. Darin stehen Seminare, Schnelltasten, Pausenfolien und Einstellungen. Deine PDFs werden nur gelesen, nie verändert.</div>
+
+      <h2 id="vorbereiten">Seminar vorbereiten</h2>
+      <h3>Ablauf</h3>
+      <p>Der Ablauf ist die Reihenfolge der PDFs im Seminar. Umsortieren per Ziehen am Griff links oder mit den Pfeilknöpfen. Jede Zeile zeigt, ob die Datei gefunden wurde („bereit“) oder fehlt.</p>
+      <h3>Neue PDF-Version</h3>
+      <p>Einfach aus PowerPoint an dieselbe Stelle mit demselben Namen exportieren. SlideDESK erkennt die geänderte Datei, sobald du ins Fenster zurückkehrst oder die Präsentation startest. Liegt die neue Version woanders, auf „Ersetzen“ klicken oder die Datei auf die Zeile ziehen. Position und Schnelltasten bleiben erhalten.</p>
+      <h3>Schnelltasten</h3>
+      <p>Wichtige Folien, die du immer wieder brauchst, legst du auf die Ziffern 1 bis 9. Im Bereich „Schnelltasten“ auf „Festlegen“ klicken oder im Ablauf über „Folien“ eine Folie anklicken. Beim Präsentieren geht es noch schneller: Umschalt + Ziffer legt die gerade gezeigte Folie auf die Taste.</p>
+      <h3>Pausenfolien</h3>
+      <p>Unter „Pausenfolien“ wählst du Folien, die in der Pause auf dem Beamer laufen, zum Beispiel der Hinweis auf deinen Newsletter mit QR-Code. Mehrere Folien wechseln automatisch, das Intervall stellst du dort ein. Ein Seminar kann auch eigene Pausenfolien haben. Ohne Pausenfolien zeigt die Pause ein schwarzes Bild.</p>
+
+      <h2 id="praesentieren">Präsentieren</h2>
+      <h3>Gespiegelt</h3>
+      <p>Beamer und Laptop zeigen dasselbe Bild. Unter Windows mit <kbd>Win</kbd> + <kbd>P</kbd> „Duplizieren“ wählen. Übersicht, Suche und Hilfe erscheinen dann für alle sichtbar.</p>
+      <h3>Zwei Bildschirme</h3>
+      <p>Der Beamer zeigt nur die Folie, der Laptop die Referentenansicht mit aktueller und nächster Folie, Uhr, Folienstreifen und Schnelltasten. Unter Windows mit <kbd>Win</kbd> + <kbd>P</kbd> „Erweitern“ wählen.</p>
+      <ul>
+        <li>Beim ersten Mal fragt der Browser, ob SlideDESK Fenster auf deinen Bildschirmen verwalten darf. Erlauben. Danach legt SlideDESK die Folie selbst auf den Beamer.</li>
+        <li>Fragt der Browser nach Pop-ups, diese für SlideDESK erlauben (Symbol rechts in der Adressleiste).</li>
+        <li>Ohne diese Erlaubnis öffnet sich ein Beamerfenster. Dieses auf den Beamer ziehen und dort auf „Vollbild“ klicken.</li>
+      </ul>
+      <h3>Vorhören</h3>
+      <p>Im Zwei-Bildschirm-Modus landet jede Auswahl aus Übersicht, Suche, Gehe zu oder Folienstreifen zuerst in der Vorschau auf dem Laptop. Der Beamer zeigt so lange weiter die aktuelle Folie. <kbd>Enter</kbd> schickt die vorgehörte Folie auf den Beamer, <kbd>Esc</kbd> verwirft sie. So suchst du in Ruhe, ohne dass das Publikum mitklickt.</p>
+      <h3>Zoom</h3>
+      <p>Mausrad, <kbd>+</kbd> und <kbd>−</kbd> zoomen, mit gedrückter Maus verschiebst du den Ausschnitt. Die Folie wird beim Zoomen scharf neu berechnet, auch kleine Beschriftungen in BPMN-Diagrammen bleiben lesbar. <kbd>0</kbd>, <kbd>Esc</kbd> oder Doppelklick setzen zurück.</p>
+      <h3>Pause</h3>
+      <p><kbd>P</kbd> startet die Pausenfolien, noch einmal <kbd>P</kbd> bringt dich an dieselbe Stelle zurück.</p>
+      <div class="note warn"><kbd>Esc</kbd> beendet im Browser immer das Vollbild, das lässt sich technisch nicht verhindern. Die Präsentation läuft dabei weiter. <kbd>F</kbd> holt das Vollbild an derselben Stelle zurück.</div>
+
+      <h2 id="tasten">Tasten</h2>
+      <table class="keys">
+        <tr><td><kbd>→</kbd> <kbd>Leertaste</kbd> <kbd>Bild ↓</kbd></td><td>nächste Folie, auch über PDF-Grenzen hinweg</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>Bild ↑</kbd></td><td>vorherige Folie</td></tr>
+        <tr><td><kbd>Umschalt</kbd> + <kbd>→</kbd> / <kbd>←</kbd></td><td>nächstes / vorheriges PDF</td></tr>
+        <tr><td><kbd>Pos1</kbd> / <kbd>Ende</kbd></td><td>erste / letzte Folie im aktuellen PDF</td></tr>
+        <tr><td><kbd>O</kbd></td><td>Übersicht aller Folien des Seminars</td></tr>
+        <tr><td><kbd>S</kbd> oder <kbd>Strg</kbd> + <kbd>F</kbd></td><td>Volltextsuche über alle PDFs</td></tr>
+        <tr><td><kbd>G</kbd></td><td>gehe zu Foliennummer im aktuellen PDF</td></tr>
+        <tr><td><kbd>1</kbd> bis <kbd>9</kbd></td><td>Schnelltaste anspringen</td></tr>
+        <tr><td><kbd>Umschalt</kbd> + <kbd>1</kbd> bis <kbd>9</kbd></td><td>aktuelle Folie auf die Schnelltaste legen</td></tr>
+        <tr><td><kbd>Rücktaste</kbd></td><td>zurück zur Stelle vor dem letzten Sprung</td></tr>
+        <tr><td><kbd>P</kbd></td><td>Pause an und aus</td></tr>
+        <tr><td><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></td><td>zoomen, zurücksetzen</td></tr>
+        <tr><td><kbd>Enter</kbd> / <kbd>Esc</kbd></td><td>vorgehörte Folie zeigen / verwerfen</td></tr>
+        <tr><td><kbd>Alt</kbd> + <kbd>→</kbd> / <kbd>←</kbd></td><td>in der Vorschau weiterblättern</td></tr>
+        <tr><td><kbd>F</kbd></td><td>zurück ins Vollbild</td></tr>
+        <tr><td><kbd>H</kbd> oder <kbd>?</kbd></td><td>Tastenhilfe während der Präsentation</td></tr>
+        <tr><td><kbd>X</kbd></td><td>Präsentation beenden</td></tr>
+      </table>
+
+      <h2 id="protokoll">Gezeigt-Protokoll</h2>
+      <p>SlideDESK merkt sich bei jeder Präsentation, welche Folien wirklich auf dem Beamer standen. Eine Folie zählt erst, wenn sie mindestens 5 Sekunden zu sehen war. Schnelles Durchblättern, Pausenfolien und geöffnete Übersichten zählen nicht. Die Schwelle änderst du unter „Einstellungen“.</p>
+      <p>Im Seminar unter „Gezeigt-Protokoll“ siehst du je Sitzung oder über alle Sitzungen, welche Folien gezeigt wurden und welche nie. Blasse Folien wurden nicht gezeigt. Das hilft beim Ausdünnen und Verbessern der Foliensätze. Gespeichert werden die letzten 30 Sitzungen je Seminar.</p>
+
+      <h2 id="geraete">PC und Laptop</h2>
+      <p>Liegt die freigegebene Ablage im Google Drive für Desktop, ist die Datei <code>slidedesk.json</code> auf allen Geräten gleich. Du kannst am PC vorbereiten und am Laptop präsentieren. Auf jedem Gerät gibst du die Ablage einmal frei. Kehrst du ins SlideDESK-Fenster zurück, lädt es Änderungen vom anderen Gerät automatisch.</p>
+      <div class="note">Damit im Seminarraum ohne Netz alles da ist, die Ordner mit Seminar-PDFs im Google Drive auf „Offline verfügbar“ stellen. SlideDESK selbst läuft nach dem ersten Aufruf auch ohne Internet.</div>
+      <p>Optional lässt sich SlideDESK über das Browsermenü als App installieren. Es startet dann in einem eigenen Fenster ohne Tabs.</p>
+
+      <h2 id="probleme">Wenn etwas hakt</h2>
+      <dl class="faq">
+        <dt>„Zugriff bestätigen“ erscheint bei jedem Start</dt>
+        <dd>Bei der Nachfrage des Browsers „Bei jedem Besuch zulassen“ wählen. Ein Klick auf „Zugriff bestätigen“ reicht aber auch.</dd>
+        <dt>Eine Zeile im Ablauf zeigt „fehlt“</dt>
+        <dd>Die Datei wurde verschoben oder umbenannt. Über „Ersetzen“ neu zuordnen. Beim Präsentieren wird ein fehlendes PDF übersprungen.</dd>
+        <dt>Im Zwei-Bildschirm-Modus erscheint „Nur ein Bildschirm erkannt“</dt>
+        <dd>Beamer anschließen und mit <kbd>Win</kbd> + <kbd>P</kbd> „Erweitern“ wählen. Oder im Dialog „Gespiegelt präsentieren“ beziehungsweise „Mit Beamerfenster“ wählen.</dd>
+        <dt>Die Referentenansicht öffnet sich nicht</dt>
+        <dd>Pop-ups für SlideDESK erlauben (Symbol rechts in der Adressleiste) und noch einmal starten.</dd>
+        <dt>Die Referentenansicht wurde versehentlich geschlossen</dt>
+        <dd>Die Präsentation läuft weiter, die Steuerung geht dann direkt auf dem Beamerbild. Mit <kbd>X</kbd> beenden und neu starten, um die Referentenansicht zurückzubekommen.</dd>
+        <dt>Der Beamer zeigt kein Vollbild</dt>
+        <dd>Das Beamerbild anklicken und <kbd>F</kbd> drücken. Die Referentenansicht weist darauf hin.</dd>
+        <dt>Eine Folie im Ablauf zeigt alten Inhalt</dt>
+        <dd>Kurz in ein anderes Fenster und zurück wechseln oder das Seminar links neu anklicken. SlideDESK liest die Dateien dann frisch ein.</dd>
+      </dl>
+
+      <h2 id="funktionen">Funktionsliste</h2>
+      <div class="features">
+        <div class="feature"><strong>Seminar als Playlist</strong><span>Mehrere PDFs in fester Reihenfolge, aus beliebigen Ordnern der Ablage.</span></div>
+        <div class="feature"><strong>Bestehende Ablage</strong><span>PDFs bleiben, wo sie sind. Nur relative Pfade, auf jedem Gerät gültig.</span></div>
+        <div class="feature"><strong>Gespiegelter Modus</strong><span>Vollbild auf allen Bildschirmen, PDF-Wechsel ohne Unterbrechung.</span></div>
+        <div class="feature"><strong>Zwei Bildschirme</strong><span>Folie auf dem Beamer, Referentenansicht mit Vorschau, Uhr und Folienstreifen auf dem Laptop.</span></div>
+        <div class="feature"><strong>Vorhören</strong><span>Nächste Folie auf dem Laptop suchen und prüfen, erst mit Enter auf den Beamer.</span></div>
+        <div class="feature"><strong>Volltextsuche</strong><span>Durchsucht den Text aller Folien des Seminars, Treffer mit Vorschau.</span></div>
+        <div class="feature"><strong>Schnelltasten 1 bis 9</strong><span>Wichtige Folien auf Tasten legen, Rücktaste springt zurück.</span></div>
+        <div class="feature"><strong>Übersicht</strong><span>Alle Folien als Miniaturen, nach PDF gruppiert, mit Pfeiltasten bedienbar.</span></div>
+        <div class="feature"><strong>Scharfer Zoom</strong><span>Stufenlos per Mausrad oder Tasten, Ausschnitt verschiebbar, neu gerendert.</span></div>
+        <div class="feature"><strong>Pausenfolien</strong><span>Eigene Werbefolien als Diashow, allgemein oder je Seminar.</span></div>
+        <div class="feature"><strong>Gezeigt-Protokoll</strong><span>Welche Folien wirklich gezeigt wurden, mit Mindestverweildauer.</span></div>
+        <div class="feature"><strong>Neue Versionen</strong><span>Neu exportierte PDFs werden automatisch erkannt, Ersetzen per Ziehen.</span></div>
+        <div class="feature"><strong>Fehlende Dateien</strong><span>Vor dem Start sichtbar, beim Präsentieren übersprungen.</span></div>
+        <div class="feature"><strong>Sauberer Bühnenmodus</strong><span>Nur die Folie, Mauszeiger blendet sich aus, F holt das Vollbild zurück.</span></div>
+        <div class="feature"><strong>Flüssig</strong><span>Nächste Folien werden vorab gerendert, Miniaturen im Hintergrund.</span></div>
+        <div class="feature"><strong>Offline</strong><span>Läuft nach dem ersten Aufruf ohne Internet, als App installierbar.</span></div>
+        <div class="feature"><strong>Mehrere Geräte</strong><span>Über Google Drive am PC vorbereiten, am Laptop präsentieren.</span></div>
+        <div class="feature"><strong>Ohne Account</strong><span>Kein Server, keine Anmeldung, keine Daten verlassen deinen Rechner.</span></div>
+        <div class="feature"><strong>Hell und dunkel</strong><span>DESK-Designsystem mit Umschalter oben rechts.</span></div>
+      </div>
+
+      <p class="foot">SlideDESK ist Teil der DESK Suite von Wissen und Werkzeug.</p>
+    </main>
+  </div>
+</body>
+</html>

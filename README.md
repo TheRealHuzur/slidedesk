@@ -2,6 +2,8 @@
 
 Seminar-PDFs aus PowerPoint komfortabel präsentieren. Läuft im Browser (Edge oder Chrome unter Windows), offline, ohne Account und ohne Server. Teil der DESK Suite.
 
+App: https://therealhuzur.github.io/slidedesk/ · Anleitung: https://therealhuzur.github.io/slidedesk/hilfe.html
+
 Masterplan: Storage `50_coding/slidedesk/SlideDESK-Masterplan.md`
 
 ## Erste Schritte

@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/build-assets.mjs
-      - run: mkdir _site && cp -r index.html fenster.html manifest.webmanifest sw.js assets.json css js icons vendor _site/
+      - run: mkdir _site && cp -r index.html fenster.html hilfe.html manifest.webmanifest sw.js assets.json css js icons vendor _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const root = new URL('..', import.meta.url).pathname;
-const include = ['index.html', 'fenster.html', 'manifest.webmanifest', 'css', 'js', 'icons', 'vendor'];
+const include = ['index.html', 'fenster.html', 'hilfe.html', 'manifest.webmanifest', 'css', 'js', 'icons', 'vendor'];
 const files = [];
 const walk = (p) => {
   const st = statSync(p);

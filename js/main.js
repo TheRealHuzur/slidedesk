@@ -99,7 +99,8 @@ class App {
       h(d, 'p', 'Gib SlideDESK einmal den Oberordner frei, in dem deine Seminarunterlagen liegen, zum Beispiel „Operatives Geschäft“ in deinem Google Drive. Alle Unterordner bleiben, wie sie sind.'),
       h(d, 'p.muted', 'SlideDESK legt darin einen kleinen Ordner „SlideDESK“ mit einer Speicherdatei für Seminare und Einstellungen an. PDFs werden nur gelesen, nie verändert.'),
       err ? h(d, 'p.error', err) : null,
-      h(d, 'div.welcome-actions', btn('Ablage freigeben', () => this.choose(), 'primary big')));
+      h(d, 'div.welcome-actions', btn('Ablage freigeben', () => this.choose(), 'primary big'),
+        h(d, 'a.btn.big.ghost', { href: 'hilfe.html', target: '_blank', rel: 'noopener' }, 'Anleitung lesen')));
   }
 
   renderReconnect(root) {
@@ -180,6 +181,7 @@ class App {
         logo(),
         h(d, 'span.topbar-root', { title: 'Freigegebene Ablage' }, '📁 ', this.root.name, isDemo() ? ' (Demo)' : ''),
         h(d, 'span.spacer'),
+        h(d, 'a.btn.small.ghost', { href: 'hilfe.html', target: '_blank', rel: 'noopener', title: 'Anleitung und Funktionsliste' }, 'Hilfe'),
         btn(getTheme() === 'dark' ? '☀' : '☾', (e) => { setTheme(getTheme() === 'dark' ? 'light' : 'dark'); e.target.textContent = getTheme() === 'dark' ? '☀' : '☾'; }, 'icon ghost', { title: 'Hell / Dunkel' })),
       h(d, 'div.layout', this.sideEl, this.contentEl));
     this.renderSide();
@@ -813,7 +815,8 @@ class App {
       h(d, 'section.card',
         h(d, 'div.card-head', h(d, 'h3', 'Offline und Installation')),
         h(d, 'p.muted.small', 'SlideDESK läuft nach dem ersten Aufruf auch ohne Internet. Optional lässt es sich über das Menü des Browsers als App installieren.'),
-        h(d, 'p.muted.small', `Version ${VERSION}`)));
+        h(d, 'p.muted.small', `Version ${VERSION}`),
+        h(d, 'div.row', h(d, 'a.btn.small.ghost', { href: 'hilfe.html', target: '_blank', rel: 'noopener' }, 'Anleitung und Funktionsliste öffnen'))));
   }
 }
 

@@ -1,0 +1,14 @@
+import { chromium, server, SHOTS, sleep, BASE, watch } from './helpers.mjs';
+const srv = await server();
+const browser = await chromium.launch();
+const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+const errors = []; watch(page, errors);
+await page.goto(BASE + 'hilfe.html'); await sleep(500);
+await page.screenshot({ path: SHOTS + '/50-help.png' });
+await page.click('.toc a[href="#funktionen"]'); await sleep(400);
+await page.screenshot({ path: SHOTS + '/51-help-features.png' });
+await page.setViewportSize({ width: 390, height: 800 }); await page.goto(BASE + 'hilfe.html'); await sleep(300);
+const sw = await page.evaluate(() => document.documentElement.scrollWidth);
+console.log('Breite mobil', sw);
+console.log(errors.join('\n') || 'keine Fehler');
+await browser.close(); srv.kill();

@@ -1,9 +1,10 @@
 {
- "version": "6702185f00a7",
+ "version": "172c13e1d2db",
  "files": [
   "./",
   "css/app.css",
   "fenster.html",
+  "hilfe.html",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/icon.svg",
