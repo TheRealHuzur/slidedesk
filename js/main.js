@@ -8,10 +8,11 @@ import {
 import { PdfLibrary } from './pdfs.js';
 import { Show } from './show.js';
 import { Launcher } from './present.js';
+import { linksPanel } from './links.js';
 
 const d = document;
 const $app = d.getElementById('app');
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 // ---------- Theme ----------
 function getTheme() { try { return localStorage.getItem('sd-theme') || 'dark'; } catch { return 'dark'; } }
@@ -262,6 +263,7 @@ class App {
     this.contentEl.replaceChildren(
       h(d, 'div.sem-head', nameIn, this.startBox),
       this.playlistCard(sem),
+      linksPanel(d, sem, () => this.store.touch(sem)),
       this.hotkeyCard(sem),
       this.seminarPauseCard(sem),
       this.protocolCard(sem),
@@ -774,6 +776,7 @@ class App {
     const copy = { ...JSON.parse(JSON.stringify(sem)), ...newSeminar(name) };
     copy.items = sem.items.map((it) => ({ ...it, id: Math.random().toString(36).slice(2, 10) }));
     copy.hotkeys = JSON.parse(JSON.stringify(sem.hotkeys || {}));
+    copy.links = (sem.links || []).map((link) => ({ ...link, id: crypto.randomUUID() }));
     copy.pause = sem.pause ? JSON.parse(JSON.stringify(sem.pause)) : null;
     copy.protocols = [];
     this.store.data.seminars.push(copy);

@@ -15,7 +15,13 @@ Masterplan: Storage `50_coding/slidedesk/SlideDESK-Masterplan.md`
 
 SlideDESK legt in der Ablage einen Ordner `SlideDESK/slidedesk.json` an. Darin stehen Seminare, Schnelltasten, Pausenfolien, Einstellungen und Protokolle. Liegt die Ablage im Google Drive für Desktop, ist alles auf PC und Laptop gleich. PDFs werden nur gelesen, nie verändert.
 
-## Modi
+## Links für das Seminar
+
+Im Bereich **Links** über **+ Link hinzufügen** einen eigenen Namen und die vollständige Webadresse eintragen. Die Einträge lassen sich bearbeiten, löschen und mit den Pfeilen sortieren. Für das nächste Webinar einfach die benötigten Links austauschen.
+
+Ein Klick auf den Namen öffnet die Website in einem neuen Browser-Tab bzw. gemäß Browsereinstellung. Die Präsentation bleibt geöffnet; zurück geht es über die normale Tab- oder Fensterauswahl. In der Referentenansicht ist dieselbe Linkliste verfügbar und bearbeitbar. Die Links werden mit dem Seminar gespeichert und über die vorhandene Ablage synchronisiert. Anmeldung und Navigation erfolgen normal auf der geöffneten Website. Eine Browser-Erweiterung ist nicht nötig.
+
+## Präsentationsmodi
 
 - **Gespiegelt:** Windows dupliziert das Bild (Win + P, „Duplizieren“). Alles läuft im Vollbild auf beiden Bildschirmen.
 - **Zwei Bildschirme:** Windows auf „Erweitern“ stellen (Win + P). Beim ersten Mal fragt der Browser nach der Fensterverwaltung, eventuell auch nach Pop-ups. Dann legt SlideDESK die Folie selbst auf den Beamer und die Referentenansicht auf den Laptop. Ohne diese Erlaubnis öffnet sich ein Beamerfenster, das man auf den Beamer zieht und dort auf „Vollbild“ klickt.
@@ -62,6 +68,8 @@ npm run build                   # assets.json neu erzeugen (nach jeder Änderung
 npm start                       # lokal unter http://localhost:8080
 npm test                        # Browsertests (Playwright, headless Chromium)
 ```
+
+Für die Browsertests werden Python mit ReportLab (`python3 -m pip install reportlab`) und Chromium (`npx playwright install chromium`) benötigt. Playwright wird über die Entwicklungsabhängigkeiten installiert.
 
 Zum Ausprobieren ohne eigene Ablage: `?ablage=demo` an die Adresse hängen, dann arbeitet SlideDESK in einem Speicher im Browser.
 

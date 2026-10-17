@@ -3,6 +3,7 @@
 
 import { h, debounce, fmtDuration, fileTitle, toast } from './util.js';
 import { OverlayManager } from './overlays.js';
+import { linksPanel } from './links.js';
 
 const Z1 = { z: 1, x: 0.5, y: 0.5 };
 const sameZoom = (a, b) => a && b && Math.abs(a.z - b.z) < 1e-4 && Math.abs(a.x - b.x) < 1e-4 && Math.abs(a.y - b.y) < 1e-4;
@@ -310,7 +311,8 @@ export class PresenterView {
             btn('Gehe zu', 'G', () => show.openOverlay('goto')),
             btn('Pause', 'P', () => show.togglePause()),
             btn('Zurück', '⌫', () => show.back(), 'Zurück zur Stelle vor dem letzten Sprung')),
-          this.hotkeysEl)),
+          this.hotkeysEl,
+          linksPanel(doc, show.sem, () => show.store.touch(show.sem)))),
       this.strip,
       this.overlayHost);
     doc.body.append(this.root);

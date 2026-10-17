@@ -1,5 +1,5 @@
 {
- "version": "172c13e1d2db",
+ "version": "7edf36c7f40f",
  "files": [
   "./",
   "css/app.css",
@@ -9,6 +9,7 @@
   "icons/icon-512.png",
   "icons/icon.svg",
   "index.html",
+  "js/links.js",
   "js/main.js",
   "js/overlays.js",
   "js/pdfs.js",

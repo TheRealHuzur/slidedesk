@@ -129,13 +129,13 @@ export function emptyData() {
 }
 
 export function newSeminar(name) {
-  return { id: uid(), name, items: [], hotkeys: {}, pause: null, protocols: [], created: Date.now(), updated: Date.now() };
+  return { id: uid(), name, items: [], links: [], hotkeys: {}, pause: null, protocols: [], created: Date.now(), updated: Date.now() };
 }
 
 function normalizeData(d) {
   const e = emptyData();
   const out = { ...e, ...d, pause: { ...e.pause, ...(d.pause || {}) }, settings: { ...e.settings, ...(d.settings || {}) } };
-  out.seminars = (out.seminars || []).map((s) => ({ hotkeys: {}, pause: null, protocols: [], items: [], ...s }));
+  out.seminars = (out.seminars || []).map((s) => ({ hotkeys: {}, pause: null, protocols: [], items: [], ...s, links: Array.isArray(s.links) ? s.links : [] }));
   return out;
 }
 

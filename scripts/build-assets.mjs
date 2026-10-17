@@ -18,4 +18,8 @@ const hash = createHash('sha256');
 for (const f of files) hash.update(f).update(readFileSync(join(root, f)));
 const version = hash.digest('hex').slice(0, 12);
 writeFileSync(join(root, 'assets.json'), JSON.stringify({ version, files: ['./', ...files] }, null, 1) + '\n');
+// Auch der Worker muss sich aendern, damit bereits installierte Apps den neuen Cache laden.
+const worker = join(root, 'sw.js');
+const source = readFileSync(worker, 'utf8').replace(/^\/\/ App-Stand: .*\n/m, '');
+writeFileSync(worker, `// App-Stand: ${version}\n${source}`);
 console.log(`assets.json: ${files.length} Dateien, Version ${version}`);

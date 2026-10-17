@@ -1,10 +1,9 @@
 // Gemeinsame Testhelfer: lokaler Server, Browser, Demo-Ablage im Browserspeicher befuellen.
-import { createRequire } from 'node:module';
+import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { readFileSync, readdirSync, statSync, mkdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
-const require = createRequire(import.meta.url);
-export const { chromium } = require('/opt/npm-tools/node_modules/playwright');
+export { chromium };
 
 export const ROOT = new URL('..', import.meta.url).pathname;
 export const PORT = 8123;

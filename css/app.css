@@ -148,6 +148,22 @@ a.btn { text-decoration: none; }
 .seg-btn.on { background: var(--accent); color: #fff; }
 .sem-foot { display: flex; gap: 8px; justify-content: flex-end; }
 
+/* Frei benannte Seminarlinks */
+.link-list { display: flex; flex-direction: column; gap: 6px; }
+.link-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); }
+.link-target { flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; color: var(--accent); text-decoration: none; border-radius: 4px; }
+.link-target:hover .link-name { text-decoration: underline; }
+.link-target:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.link-name { font-weight: 600; overflow-wrap: anywhere; }
+.link-url { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-actions { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
+.link-editor { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.link-editor-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.presenter .seminar-links { margin: 6px 0 0; padding: 12px; }
+.presenter .seminar-links .card-head { margin-bottom: 8px; }
+.pv-col-next { overflow-y: auto; }
+.pv-col-next > * { flex-shrink: 0; }
+
 /* Playlist */
 .pl-list { display: flex; flex-direction: column; gap: 6px; }
 .pl-empty { padding: 10px 0; }

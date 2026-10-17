@@ -2,7 +2,11 @@
 import { chromium, server, watch, SHOTS, sleep, BASE, canvasHasContent } from './helpers.mjs';
 import { setupSeminar } from './setup.mjs';
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+const pdfDir = mkdtempSync(join(tmpdir(), 'slidedesk-pdf-'));
+const newPdf = join(pdfDir, 'neu.pdf');
 const srv = await server();
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
@@ -24,13 +28,13 @@ try {
   step('Neue PDF-Version wird automatisch übernommen');
   execSync(`python3 - <<'PY'
 from reportlab.pdfgen import canvas
-c = canvas.Canvas('/tmp/claude-0/neu.pdf', pagesize=(960,540))
+c = canvas.Canvas(${JSON.stringify(newPdf)}, pagesize=(960,540))
 for i in range(1,3):
     c.setFont('Helvetica-Bold', 40); c.drawString(60, 300, f'Neue Version Folie {i}'); c.showPage()
 c.save()
 PY`);
   await sleep(1100); // lastModified muss sich unterscheiden
-  await writeOpfs('Seminarunterlagen/Duisburg/Einstieg Duisburg.pdf', readFileSync('/tmp/claude-0/neu.pdf').toString('base64'));
+  await writeOpfs('Seminarunterlagen/Duisburg/Einstieg Duisburg.pdf', readFileSync(newPdf).toString('base64'));
   await page.click('.side-item:has-text("Einstellungen")');
   await page.click('.side-item:has-text("Prozessmanagement Duisburg")');
   await page.waitForFunction(() => /bereit/.test(document.querySelector('.start-status')?.textContent || ''));
@@ -103,3 +107,4 @@ PY`);
 console.log(errors.filter((e) => !/willReadFrequently|ERR_INTERNET_DISCONNECTED|Failed to load resource/.test(e)).join('\n') || 'keine Konsolenfehler');
 console.log(fails.length ? `${fails.length} FEHLGESCHLAGEN` : 'ALLES OK');
 await browser.close(); try { srv.kill(); } catch {}
+rmSync(pdfDir, { recursive: true, force: true });
