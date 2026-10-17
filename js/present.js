@@ -7,6 +7,7 @@
 //                      Beamerfenster oeffnet sich, das man auf den Beamer zieht.
 
 import { StageView, PresenterView } from './views.js';
+import { webUrl } from './links.js';
 
 const POPUP_URL = new URL('../fenster.html', import.meta.url).href;
 
@@ -18,6 +19,7 @@ export class Launcher {
     this.views = {};
     this.popups = {};
     this.ready = new Map();
+    this.webWindows = new Map();
     window.__slidedeskReady = (w) => {
       for (const [win, res] of this.ready) if (win === w) { this.ready.delete(win); res(w); }
     };
@@ -93,6 +95,7 @@ export class Launcher {
     if (sd && others.length) {
       // Variante A: Hauptfenster als Buehne auf den Beamer, Referentenansicht auf den Laptop.
       const beamer = others.find((s) => !s.isInternal) || others[0];
+      this.presentationScreen = beamer;
       this.show.start(sem, 'dual', prepPromise);
       const stage = new StageView(document, this.show, this.lib, { fsOpts: { screen: beamer } });
       this.views = { stage };
@@ -108,15 +111,20 @@ export class Launcher {
       this.hookCommon();
       this.waitReady(pop).then((w) => {
         if (!this.show.active) return;
-        this.views.presenter = new PresenterView(w.document, this.show, this.lib, { stageNote: () => this.stageNote() });
+        this.views.presenter = new PresenterView(w.document, this.show, this.lib, {
+          stageNote: () => this.stageNote(), onOpenLink: (link, source) => this.openWebLink(link, source),
+        });
         w.addEventListener('pagehide', () => this.onPresenterClosed());
         w.focus();
       }).catch(() => this.onPresenterClosed());
       return null;
     }
     // Variante B: Beamerfenster zum Hinueberziehen.
+    this.presentationScreen = null;
     this.show.start(sem, 'dual', prepPromise);
-    const presenter = new PresenterView(document, this.show, this.lib, { stageNote: () => this.stageNote() });
+    const presenter = new PresenterView(document, this.show, this.lib, {
+      stageNote: () => this.stageNote(), onOpenLink: (link, source) => this.openWebLink(link, source),
+    });
     this.views = { presenter };
     this.hookCommon();
     this.openStagePopup();
@@ -144,6 +152,10 @@ export class Launcher {
 
   /** Hinweis in der Referentenansicht, wenn der Beamer nicht sauber im Vollbild ist. */
   stageNote() {
+    if (this.show.webLink) return {
+      text: `Website „${this.show.webLink}“ auf dem Präsentationsbildschirm.`,
+      action: { label: 'Zurück zu Folien', fn: () => this.returnToSlides() },
+    };
     const st = this.views.stage;
     if (!st) return { text: 'Das Beamerfenster ist geschlossen.', action: { label: 'Beamerfenster öffnen', fn: () => this.openStagePopup() } };
     if (!st.isFullscreen()) {
@@ -156,9 +168,67 @@ export class Launcher {
     return null;
   }
 
+  /** Webinhalt als echtes Browserfenster auf dem Bildschirm der PDF-Buehne zeigen. */
+  openWebLink(link) {
+    const url = webUrl(link.url);
+    if (!url || !this.show.active || this.show.mode !== 'dual') return;
+    const stageWindow = this.views.stage?.doc.defaultView;
+    if (!stageWindow || stageWindow.closed) {
+      this.show.emit('notice', 'Bitte zuerst das Beamerfenster öffnen und auf den Präsentationsbildschirm ziehen.');
+      return;
+    }
+    const key = link.id || url;
+    const existing = this.webWindows.get(key);
+    if (existing?.url === url && !existing.window.closed) {
+      existing.window.focus();
+      this.show.setWebLink(link.name);
+      return;
+    }
+    // Bei manuell verschobenem Beamerfenster kommt die Bildschirmgeometrie aus diesem Fenster.
+    const screen = this.presentationScreen;
+    const left = Number.isFinite(screen?.availLeft) ? screen.availLeft : stageWindow.screenX;
+    const top = Number.isFinite(screen?.availTop) ? screen.availTop : stageWindow.screenY;
+    const width = screen?.availWidth || stageWindow.outerWidth;
+    const height = screen?.availHeight || stageWindow.outerHeight;
+    const features = `popup=yes,left=${left},top=${top},width=${width},height=${height}`;
+    // Die Buehne ist der Oeffner: auch ohne Bildschirmerkennung liegt das neue Fenster bei ihr.
+    const popup = stageWindow.open('about:blank', '_blank', features);
+    if (!popup) {
+      this.show.emit('notice', 'Das Browserfenster wurde blockiert. Bitte Pop-ups für SlideDesk erlauben und den Link erneut anklicken.');
+      return;
+    }
+    try {
+      popup.moveTo(left, top);
+      popup.resizeTo(width, height);
+      // Fremde Seiten erhalten keinen Zugriff auf das SlideDesk-Fenster.
+      popup.opener = null;
+      popup.location.replace(url);
+      popup.focus();
+    } catch {
+      popup.close();
+      this.show.emit('notice', 'Die Website konnte nicht auf dem Präsentationsbildschirm geöffnet werden.');
+      return;
+    }
+    this.webWindows.set(key, { window: popup, url });
+    this.show.setWebLink(link.name);
+    this.offWebFocus?.();
+    const returned = () => { if (this.show.active && this.show.webLink) this.show.setWebLink(null); };
+    stageWindow.addEventListener('focus', returned);
+    this.offWebFocus = () => stageWindow.removeEventListener('focus', returned);
+  }
+
+  returnToSlides() {
+    const stage = this.views.stage;
+    if (!stage) { this.show.setWebLink(null); this.openStagePopup(); return; }
+    stage.doc.defaultView.focus();
+    this.show.setWebLink(null);
+    stage.goFullscreen();
+  }
+
   onPresenterClosed() {
     if (!this.show.active || !this.views.presenter && !this.popups.referent) return;
     try { this.views.presenter?.destroy(); } catch {}
+    if (this.show.webLink) this.returnToSlides();
     this.views.presenter = null;
     this.popups.referent = null;
     // Ohne Referentenansicht weiter wie im gespiegelten Modus.
@@ -184,6 +254,10 @@ export class Launcher {
   }
 
   cleanup() {
+    this.offWebFocus?.(); this.offWebFocus = null;
+    this.presentationScreen = null;
+    // Websites offen lassen, damit dort bearbeitete Inhalte erhalten bleiben.
+    this.webWindows.clear();
     this.offStop?.(); this.offStop = null;
     this.offFs?.(); this.offFs = null;
     for (const v of Object.values(this.views)) try { v?.destroy(); } catch (e) { console.warn(e); }

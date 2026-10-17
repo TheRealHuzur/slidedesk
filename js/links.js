@@ -10,7 +10,7 @@ export function webUrl(value) {
   } catch { return null; }
 }
 
-export function linksPanel(doc, seminar, onChange) {
+export function linksPanel(doc, seminar, onChange, onOpen = null) {
   const button = (label, onclick, cls = 'small ghost', attrs = {}) =>
     h(doc, 'button.btn' + (cls ? '.' + cls.split(' ').join('.') : ''), { type: 'button', onclick, ...attrs }, label);
   const list = h(doc, 'div.link-list');
@@ -85,7 +85,15 @@ export function linksPanel(doc, seminar, onChange) {
       const address = webUrl(link?.url);
       const text = [h(doc, 'span.link-name', label), h(doc, 'span.link-url', typeof link?.url === 'string' ? link.url : '')];
       const target = address
-        ? h(doc, 'a.link-target', { href: address, target: '_blank', rel: 'noopener noreferrer', title: 'In neuem Tab öffnen: ' + address }, ...text)
+        ? h(doc, 'a.link-target', {
+          href: address, target: '_blank', rel: 'noopener noreferrer',
+          title: (onOpen ? 'Auf dem Präsentationsbildschirm zeigen: ' : 'In neuem Tab öffnen: ') + address,
+          onclick: (e) => {
+            if (!onOpen || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            onOpen({ ...link, url: address }, doc.defaultView);
+          },
+        }, ...text)
         : h(doc, 'div.link-target.invalid', ...text, h(doc, 'span.error.small', 'Ungültiger Link – bitte bearbeiten.'));
       return h(doc, 'div.link-row', target,
         h(doc, 'div.link-actions',

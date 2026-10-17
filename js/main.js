@@ -12,7 +12,7 @@ import { linksPanel } from './links.js';
 
 const d = document;
 const $app = d.getElementById('app');
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 
 // ---------- Theme ----------
 function getTheme() { try { return localStorage.getItem('sd-theme') || 'dark'; } catch { return 'dark'; } }

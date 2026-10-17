@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 python3 tests/make_pdfs.py >/dev/null || exit 1
 node scripts/build-assets.mjs >/dev/null || exit 1
 rc=0
-for t in e2e-admin e2e-mirror e2e-dual e2e-robust e2e-links e2e-update; do
+for t in e2e-admin e2e-mirror e2e-dual e2e-robust e2e-links e2e-update e2e-webscreen; do
   echo "=== $t"
   if ! out=$(timeout 240 node tests/$t.mjs 2>&1); then
     echo "$out"

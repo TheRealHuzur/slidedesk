@@ -259,7 +259,7 @@ export class StageView {
 
 /** Referentenansicht fuer den Laptop im Zwei-Bildschirm-Modus. */
 export class PresenterView {
-  constructor(doc, show, lib, { onEnd, stageNote } = {}) {
+  constructor(doc, show, lib, { onEnd, stageNote, onOpenLink } = {}) {
     this.doc = doc;
     this.show = show;
     this.lib = lib;
@@ -279,6 +279,7 @@ export class PresenterView {
     this.badge = h(doc, 'span.pv-badge');
     this.pauseBadge = h(doc, 'span.pv-badge.pause', 'PAUSE');
     this.liveInfo = h(doc, 'div.pv-info');
+    this.liveLabel = h(doc, 'div.pv-label.live');
     this.prevLabel = h(doc, 'div.pv-label');
     this.prevInfo = h(doc, 'div.pv-info');
     this.stageWarn = h(doc, 'div.pv-warn');
@@ -298,7 +299,7 @@ export class PresenterView {
       this.stageWarn,
       h(doc, 'main.pv-main',
         h(doc, 'section.pv-col.pv-col-live',
-          h(doc, 'div.pv-label.live', h(doc, 'span.dot'), 'Auf dem Beamer'),
+          this.liveLabel,
           this.live.el,
           this.liveInfo),
         h(doc, 'section.pv-col.pv-col-next',
@@ -312,7 +313,7 @@ export class PresenterView {
             btn('Pause', 'P', () => show.togglePause()),
             btn('Zurück', '⌫', () => show.back(), 'Zurück zur Stelle vor dem letzten Sprung')),
           this.hotkeysEl,
-          linksPanel(doc, show.sem, () => show.store.touch(show.sem)))),
+          linksPanel(doc, show.sem, () => show.store.touch(show.sem), onOpenLink))),
       this.strip,
       this.overlayHost);
     doc.body.append(this.root);
@@ -351,6 +352,8 @@ export class PresenterView {
     this.badge.textContent = 'Zwei Bildschirme';
     this.pauseBadge.hidden = !s.paused;
     this.root.classList.toggle('paused', !!s.paused);
+    this.root.classList.toggle('web-active', !!s.webLink);
+    this.liveLabel.replaceChildren(h(d, 'span.dot'), s.webLink ? 'Folien im Hintergrund' : 'Auf dem Beamer');
     const note = this.stageNote?.();
     this.stageWarn.replaceChildren();
     if (note) {
@@ -370,6 +373,7 @@ export class PresenterView {
     } else if (it) {
       this.liveInfo.textContent = `${it.title} · Folie ${s.pos.p} von ${it.pages} · gesamt ${s.globalIndex()} von ${s.totalSlides()}${s.zoom.z > 1 ? ` · Zoom ${Math.round(s.zoom.z * 100)} %` : ''}`;
     }
+    if (s.webLink) this.liveInfo.textContent = `Website „${s.webLink}“ wird gezeigt. Diese Folie bleibt für die Rückkehr geöffnet.`;
     const pv = s.preview();
     this.preview.show(pv.ref);
     this.preview.el.classList.toggle('cued', pv.cued);

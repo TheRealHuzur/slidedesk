@@ -40,6 +40,7 @@ export class Show extends Emitter {
     this.active = true;
     this.sem = sem;
     this.mode = mode; // 'mirror' | 'dual'
+    this.webLink = null;
     this.items = [];
     this.loading = true;
     this.pos = { i: 0, p: 1 };
@@ -285,9 +286,14 @@ export class Show extends Emitter {
   }
 
   // ---------- Gezeigt-Protokoll ----------
+  setWebLink(name) {
+    this.webLink = name;
+    this.changed();
+  }
+
   /** Welche Folie das Publikum gerade wirklich sieht (oder null). */
   visibleKey() {
-    if (!this.active || this.loading || this.paused) return null;
+    if (!this.active || this.loading || this.paused || this.webLink) return null;
     if (this.mode === 'mirror' && this.overlay && this.overlay.type !== 'help') return null;
     const r = this.slideRef();
     return r ? slideKey(r.path, r.page) : null;

@@ -332,6 +332,7 @@ body.presenting { overflow: hidden; }
 .pv-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .pv-label.live .dot { width: 8px; height: 8px; border-radius: 99px; background: var(--err); box-shadow: 0 0 0 3px rgba(239,68,68,.2); }
 .presenter.paused .pv-label.live .dot { background: var(--warn); }
+.presenter.web-active .pv-label.live .dot { background: var(--warn); box-shadow: none; }
 .pv-label.cued { color: var(--accent); }
 .pv-live { flex: 1; min-height: 0; border-radius: 10px; border: 2px solid var(--line); }
 .presenter.paused .pv-live { border-color: var(--warn); }
