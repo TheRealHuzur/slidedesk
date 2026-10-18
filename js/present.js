@@ -3,10 +3,12 @@
 // Gespiegelt:          Hauptfenster wird Buehne im Vollbild (Windows dupliziert das Bild).
 // Zwei Bildschirme A:  Mit Erlaubnis zur Fensterverwaltung geht das Hauptfenster als Buehne
 //                      ins Vollbild auf den Beamer, die Referentenansicht oeffnet sich auf dem Laptop.
-//                      Liegt das Hauptfenster schon vor dem Start auf dem Beamer, bleibt es dort das
-//                      einzige Praesentationsfenster: Websites oeffnen als Tabs in diesem Fenster.
+//                      Liegt das Hauptfenster schon vor dem Start auf dem Beamer, bleibt es dort Buehne.
 // Zwei Bildschirme B:  Ohne diese Erlaubnis bleibt das Hauptfenster Referentenansicht und ein
 //                      Beamerfenster oeffnet sich, das man auf den Beamer zieht.
+// Websites:            oeffnen auf dem Laptop und werden dort bedient. Die Buehne zeigt sie als Live-Bild
+//                      des Laptop-Bildschirms und bleibt dabei im Vollbild. Kommt die Referentenansicht
+//                      nach vorn, zeigt der Beamer wieder die Folie.
 
 import { StageView, PresenterView } from './views.js';
 import { webUrl } from './links.js';
@@ -15,6 +17,11 @@ const POPUP_URL = new URL('../fenster.html', import.meta.url).href;
 const STAGE_NAME = 'slidedesk-praesentation';
 const FULLSCREEN_MSG = 'slidedesk-vollbild';
 // Das Blocker-Symbol erscheint im Fenster, das oeffnen wollte; im Vollbild ist es nicht zu sehen.
+const CAPTURE_OPTS = {
+  video: { displaySurface: 'monitor', cursor: 'always', frameRate: 30 },
+  audio: false, selfBrowserSurface: 'exclude', surfaceSwitching: 'exclude', systemAudio: 'exclude',
+};
+const stopStream = (stream) => stream.getTracks().forEach((t) => t.stop());
 const POPUP_HELP = 'Pop-ups für SlideDESK freigeben: in der Referentenansicht oder im SlideDESK-Fenster links neben der Adresse auf das Symbol klicken, „Website-Einstellungen“ öffnen und „Pop-ups und Weiterleitungen“ auf „Zulassen“ stellen.';
 
 export class Launcher {
@@ -27,7 +34,9 @@ export class Launcher {
     this.ready = new Map();
     this.webWindows = new Map();
     this.webCount = 0;
-    this.webTabs = false;
+    this.mainStage = false;
+    this.capture = null;
+    this.webShown = null;
     window.addEventListener('message', (e) => {
       if (e.origin === location.origin && e.data === FULLSCREEN_MSG) this.onFullscreenDelegated();
     });
@@ -119,7 +128,7 @@ export class Launcher {
     if (layout) {
       // Variante A: Hauptfenster als Buehne auf dem Beamer, Referentenansicht auf dem Laptop.
       this.presentationScreen = layout.stage;
-      this.webTabs = layout.kind === 'window';
+      this.mainStage = layout.kind === 'window';
       this.show.start(sem, 'dual', prepPromise);
       // Mit Bildschirmangabe verbraucht das Vollbild den Klick nicht; die Referentenansicht darf danach aufgehen.
       const stage = new StageView(document, this.show, this.lib, { fsOpts: { screen: layout.stage } });
@@ -135,7 +144,7 @@ export class Launcher {
       }
       this.popups.referent = pop;
       this.hookCommon();
-      if (this.webTabs) this.watchStageTab();
+      if (this.mainStage) this.watchStageTab();
       this.waitReady(pop).then((w) => {
         if (!this.show.active) return;
         // Die Groesse beim Oeffnen gilt dem Inhalt; das ganze Fenster soll in den Arbeitsbereich passen.
@@ -168,6 +177,7 @@ export class Launcher {
       if (!this.show.active) return;
       this.views.stage?.destroy();
       this.views.stage = new StageView(w.document, this.show, this.lib, { popup: true });
+      this.views.stage.setCapture(this.capture);
       w.addEventListener('pagehide', () => {
         if (!this.show.active || this.popups.buehne !== pop) return;
         this.views.stage?.destroy();
@@ -182,13 +192,15 @@ export class Launcher {
   /** Hinweis in der Referentenansicht, wenn der Beamer nicht sauber im Vollbild ist. */
   stageNote() {
     if (this.show.webLink) return {
-      text: `„${this.show.webLink}“ wird auf dem Präsentationsbildschirm gezeigt.`,
+      text: this.webShown
+        ? `„${this.show.webLink}“ läuft auf dem Laptop und wird auf den Beamer übertragen.`
+        : `„${this.show.webLink}“ wird auf dem Präsentationsbildschirm gezeigt.`,
       action: { label: 'Zurück zu Folien', fn: () => this.returnToSlides() },
     };
     const st = this.views.stage;
     if (!st) return { text: 'Das Beamerfenster ist geschlossen.', action: { label: 'Beamerfenster öffnen', fn: () => this.openStagePopup() } };
     if (!st.isFullscreen()) {
-      if (this.webTabs) return {
+      if (this.mainStage) return {
         text: 'Die Folien sind auf dem Beamer nicht im Vollbild.',
         action: { label: 'Vollbild', fn: () => this.returnToSlides() },
       };
@@ -201,83 +213,132 @@ export class Launcher {
     return null;
   }
 
-  /** Webinhalt auf dem Bildschirm der PDF-Buehne zeigen: als Tab im Praesentationsfenster oder als eigenes Fenster. */
+  /**
+   * Website auf dem Laptop oeffnen und als Live-Bild des Laptop-Bildschirms auf den Beamer bringen.
+   * source ist die angeklickte Referentenansicht; dort erscheint beim ersten Mal die Bildschirmauswahl.
+   */
   openWebLink(link, source = window) {
     const url = webUrl(link.url);
     if (!url || !this.show.active || this.show.mode !== 'dual') return;
-    if (this.webTabs) { this.openWebTab(link, url, source); return; }
-    const stageWindow = this.views.stage?.doc.defaultView;
-    if (!stageWindow || stageWindow.closed) {
+    if (!this.views.stage) {
       this.show.emit('notice', 'Bitte zuerst das Beamerfenster öffnen und auf den Präsentationsbildschirm ziehen.');
       return;
     }
+    if (this.capture) { this.showWeb(link, url, source); return; }
+    const media = source.navigator.mediaDevices;
+    if (!media?.getDisplayMedia) {
+      this.show.emit('notice', 'Dieser Browser kann den Bildschirm nicht übertragen. Bitte Edge oder Chrome verwenden.');
+      return;
+    }
+    if (this.capturing) return;
+    this.capturing = true;
+    this.show.emit('notice', 'Einmal je Präsentation: „Gesamter Bildschirm“ wählen, dann den Bildschirm des Laptops.');
+    media.getDisplayMedia(CAPTURE_OPTS).then((stream) => {
+      this.capturing = false;
+      if (!this.show.active) { stopStream(stream); return; }
+      this.setCapture(stream);
+      this.showWeb(link, url, source, true);
+    }, (e) => {
+      this.capturing = false;
+      this.show.emit('notice', e?.name === 'NotAllowedError'
+        ? 'Bildschirmübertragung abgebrochen. Der Beamer zeigt weiter die Folien.'
+        : 'Die Bildschirmübertragung ließ sich nicht starten. Der Beamer zeigt weiter die Folien.');
+    });
+  }
+
+  /** Endet die Freigabe ueber die Browserleiste, zeigt der Beamer wieder die Folie; der naechste Link fragt neu. */
+  setCapture(stream) {
+    this.capture = stream;
+    stream.getVideoTracks()[0]?.addEventListener('ended', () => {
+      if (this.capture !== stream) return;
+      this.capture = null;
+      this.views.stage?.setCapture(null);
+      if (!this.webShown) return;
+      this.returnToSlides();
+      this.show.emit('notice', 'Bildschirmübertragung beendet. Der Beamer zeigt wieder die Folien.');
+    });
+    this.views.stage?.setCapture(stream);
+  }
+
+  stopCapture() {
+    const stream = this.capture;
+    this.capture = null;
+    this.views.stage?.setCapture(null);
+    if (stream) stopStream(stream);
+  }
+
+  /** Website-Fenster auf dem Laptop nach vorn holen oder oeffnen, dann den Beamer umschalten. */
+  showWeb(link, url, source, afterPicker = false) {
     const key = link.id || url;
     const existing = this.webWindows.get(key);
+    let win = null;
     if (existing?.url === url && !existing.window.closed) {
-      existing.window.focus();
-      this.show.setWebLink(link.name);
-      return;
+      // Der benannte Aufruf aus der angeklickten Referentenansicht holt das Fenster ohne Neuladen nach vorn.
+      const found = source.open('', existing.name);
+      if (found === existing.window) win = found;
+      else try { found?.close(); } catch {}
     }
-    // Bei manuell verschobenem Beamerfenster kommt die Bildschirmgeometrie aus diesem Fenster.
-    const screen = this.presentationScreen;
-    const left = Number.isFinite(screen?.availLeft) ? screen.availLeft : stageWindow.screenX;
-    const top = Number.isFinite(screen?.availTop) ? screen.availTop : stageWindow.screenY;
-    const width = screen?.availWidth || stageWindow.outerWidth;
-    const height = screen?.availHeight || stageWindow.outerHeight;
-    const features = `popup=yes,left=${left},top=${top},width=${width},height=${height}`;
-    // Die Buehne ist der Oeffner: auch ohne Bildschirmerkennung liegt das neue Fenster bei ihr.
-    const popup = stageWindow.open('about:blank', '_blank', features);
-    if (!popup) {
-      this.show.emit('notice', `Das Browserfenster wurde blockiert. ${POPUP_HELP} Dann den Link erneut anklicken.`);
-      return;
+    win ||= this.openWebWindow(key, url, source, afterPicker);
+    if (!win) return;
+    this.webShown = { win };
+    this.show.setWebLink(link.name);
+    this.watchWeb(source);
+  }
+
+  /** Eigenes Fenster ueber dem Arbeitsbereich des Laptops. Es behaelt den Oeffner, sonst ist es ueber den Namen nicht wieder auffindbar. */
+  openWebWindow(key, url, source, afterPicker) {
+    const sc = source.screen;
+    const left = Number.isFinite(sc.availLeft) ? sc.availLeft : source.screenX;
+    const top = Number.isFinite(sc.availTop) ? sc.availTop : source.screenY;
+    const width = sc.availWidth || source.outerWidth;
+    const height = sc.availHeight || source.outerHeight;
+    const name = `slidedesk-web-${++this.webCount}`;
+    const win = source.open('about:blank', name, `popup=yes,left=${left},top=${top},width=${width},height=${height}`);
+    if (!win) {
+      // Nach der Bildschirmauswahl ist der Klick verbraucht; ein zweiter Klick braucht keine Pop-up-Freigabe.
+      this.show.emit('notice', afterPicker
+        ? 'Die Übertragung steht. Bitte den Link noch einmal anklicken.'
+        : `Das Website-Fenster wurde blockiert. ${POPUP_HELP} Dann den Link erneut anklicken.`);
+      return null;
     }
     try {
-      popup.moveTo(left, top);
-      popup.resizeTo(width, height);
-      // Fremde Seiten erhalten keinen Zugriff auf das SlideDesk-Fenster.
-      popup.opener = null;
-      popup.location.replace(url);
-      popup.focus();
+      // Die Groesse beim Oeffnen gilt dem Inhalt; das ganze Fenster soll in den Arbeitsbereich passen.
+      win.moveTo(left, top);
+      win.resizeTo(width, height);
+      win.location.replace(url);
     } catch {
-      popup.close();
-      this.show.emit('notice', 'Die Website konnte nicht auf dem Präsentationsbildschirm geöffnet werden.');
-      return;
+      try { win.close(); } catch {}
+      this.show.emit('notice', 'Die Website konnte nicht geöffnet werden.');
+      return null;
     }
-    this.webWindows.set(key, { window: popup, url });
-    this.show.setWebLink(link.name);
-    if (this.presentationScreen && !this.tabHintShown) {
-      this.tabHintShown = true;
-      this.show.emit('notice', 'Tipp: Liegt das SlideDesk-Fenster schon vor dem Start auf dem Beamer, öffnen Websites dort als Tab im selben Fenster.');
-    }
-    this.offWebFocus?.();
-    const returned = () => { if (this.show.active && this.show.webLink) this.show.setWebLink(null); };
-    stageWindow.addEventListener('focus', returned);
-    this.offWebFocus = () => stageWindow.removeEventListener('focus', returned);
+    this.webWindows.set(key, { window: win, url, name });
+    return win;
   }
 
   /**
-   * Website als Tab im Praesentationsfenster. Der Tab behaelt seinen Oeffner, damit ihn ein erneuter
-   * Klick ueber seinen Namen ohne Neuladen nach vorn holen kann.
+   * Der Beamer zeigt den Laptop-Bildschirm nur, solange die Website dort vorn liegt. Kommt die
+   * Referentenansicht nach vorn oder schliesst die Website, zeigt er wieder die Folie.
    */
-  openWebTab(link, url, source) {
-    const key = link.id || url;
-    const existing = this.webWindows.get(key);
-    if (existing?.url === url && !existing.window.closed) {
-      // Der benannte Aufruf aus der angeklickten Referentenansicht holt den Tab nach vorn.
-      const found = source.open('', existing.name);
-      if (found === existing.window) { this.show.setWebLink(link.name); return; }
-      try { found?.close(); } catch {}
-    }
-    const name = `slidedesk-web-${++this.webCount}`;
-    // Ohne Fensterangaben oeffnet der Browser einen Tab im Fenster der Buehne. Ohne Pop-up-Freigabe
-    // oeffnet die angeklickte Referentenansicht; der Tab landet dann im zuletzt aktiven Browserfenster.
-    const tab = window.open(url, name) || (source !== window ? source.open(url, name) : null);
-    if (!tab) {
-      this.show.emit('notice', `Der Tab wurde blockiert. ${POPUP_HELP} Dann den Link erneut anklicken.`);
-      return;
-    }
-    this.webWindows.set(key, { window: tab, url, name });
-    this.show.setWebLink(link.name);
+  watchWeb(source) {
+    this.offWebWatch?.();
+    let away = false;
+    const onBlur = () => { away = true; };
+    const onFocus = () => { if (away) this.returnToSlides(); };
+    source.addEventListener('blur', onBlur);
+    source.addEventListener('focus', onFocus);
+    const poll = setInterval(() => { if (this.webShown?.win.closed) this.returnToSlides(); }, 700);
+    // Bleibt die Referentenansicht vorn, wuerde der Beamer sie selbst zeigen.
+    const guard = setTimeout(() => {
+      if (away || !source.document.hasFocus()) return;
+      this.returnToSlides();
+      this.show.emit('notice', 'Das Website-Fenster kam nicht nach vorn. Bitte den Link erneut anklicken.');
+    }, 2500);
+    this.offWebWatch = () => {
+      source.removeEventListener('blur', onBlur);
+      source.removeEventListener('focus', onFocus);
+      clearInterval(poll);
+      clearTimeout(guard);
+    };
   }
 
   /** Solange der SlideDesk-Tab verdeckt ist, zeigt das Praesentationsfenster etwas anderes. */
@@ -306,10 +367,13 @@ export class Launcher {
     document.addEventListener('visibilitychange', done);
   }
 
+  /** Beamer zurueck auf die Folie; Websites bleiben auf dem Laptop mit ihrem Arbeitsstand offen. */
   returnToSlides() {
+    this.offWebWatch?.(); this.offWebWatch = null;
+    this.webShown = null;
     const stage = this.views.stage;
     if (!stage) { this.show.setWebLink(null); this.openStagePopup(); return; }
-    if (this.webTabs) {
+    if (this.mainStage && (document.hidden || !stage.isFullscreen())) {
       // Nur die angeklickte Referentenansicht darf den SlideDesk-Tab nach vorn holen und das Vollbild uebergeben.
       const presenter = this.views.presenter?.doc.defaultView;
       if (presenter && !presenter.closed) {
@@ -320,15 +384,15 @@ export class Launcher {
       if (!document.hidden) this.show.setWebLink(null);
       return;
     }
-    stage.doc.defaultView.focus();
-    this.show.setWebLink(null);
-    stage.goFullscreen();
+    if (this.show.webLink) this.show.setWebLink(null);
+    if (!stage.isFullscreen()) stage.goFullscreen();
   }
 
   onPresenterClosed() {
     if (!this.show.active || !this.views.presenter && !this.popups.referent) return;
     try { this.views.presenter?.destroy(); } catch {}
     if (this.show.webLink) this.returnToSlides();
+    this.stopCapture();
     this.views.presenter = null;
     this.popups.referent = null;
     // Ohne Referentenansicht weiter wie im gespiegelten Modus.
@@ -349,15 +413,18 @@ export class Launcher {
       if (!st) return;
       const fromStage = e?.view === st.doc.defaultView || e?.target?.ownerDocument === st.doc;
       if (fromStage) st.goFullscreen();
-      else if (this.webTabs) this.returnToSlides();
+      else if (this.mainStage) this.returnToSlides();
       else this.show.emit('notice', 'Vollbild für den Beamer: das Beamer- bzw. Hauptfenster anklicken und dort F drücken.');
     });
   }
 
   cleanup() {
-    this.offWebFocus?.(); this.offWebFocus = null;
+    this.offWebWatch?.(); this.offWebWatch = null;
     this.offStageTab?.(); this.offStageTab = null;
-    this.webTabs = false;
+    this.stopCapture();
+    this.webShown = null;
+    this.capturing = false;
+    this.mainStage = false;
     this.presentationScreen = null;
     // Websites offen lassen, damit dort bearbeitete Inhalte erhalten bleiben.
     this.webWindows.clear();

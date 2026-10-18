@@ -274,6 +274,7 @@ body.presenting { overflow: hidden; }
 .stage { position: fixed; inset: 0; background: #000; z-index: 1000; color: #e5e7eb; }
 .stage .stage-slide { position: absolute; inset: 0; }
 .stage.nocursor, .stage.nocursor * { cursor: none !important; }
+.stage-web { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; z-index: 3; }
 .stage-loading { position: absolute; inset: 0; display: none; place-items: center; align-content: center; gap: 12px; color: #64748b; font-size: 14px; }
 .stage-loading .sd-logo { color: #fff; font-size: 26px; }
 .stage.is-loading .stage-loading { display: grid; }

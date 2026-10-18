@@ -1,4 +1,5 @@
-// Ein Praesentationsfenster: SlideDesk liegt vor dem Start auf dem Beamer, Websites oeffnen dort als Tab.
+// Ein Praesentationsfenster: SlideDesk liegt vor dem Start auf dem Beamer und bleibt dort Buehne.
+// Websites oeffnen trotzdem auf dem Laptop; der Beamer zeigt ihr Live-Bild.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { chromium, server, BASE, SHOTS } from './helpers.mjs';
@@ -13,8 +14,11 @@ const site = createServer((req, res) => {
 await new Promise((resolve) => site.listen(0, '127.0.0.1', resolve));
 const targetUrl = `http://127.0.0.1:${site.address().port}/`;
 const srv = await server();
-// Vollstaendiges Chromium: nur dort landen Tabs wie im Desktop-Browser im selben Fenster.
-const browser = await chromium.launch({ channel: 'chromium', ignoreDefaultArgs: ['--disable-popup-blocking', '--hide-scrollbars'] });
+// Vollstaendiges Chromium: Tabs und Fenster verhalten sich wie im Desktop-Browser.
+const browser = await chromium.launch({
+  channel: 'chromium', ignoreDefaultArgs: ['--disable-popup-blocking', '--hide-scrollbars'],
+  args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+});
 const ctx = await browser.newContext({ viewport: null });
 ctx.setDefaultTimeout(10000);
 const page = await ctx.newPage();
@@ -53,7 +57,7 @@ try {
     s.hotkeys[3] = { path: 'Module/BPMN Diagramme.pdf', page: 2 };
     window.app.renderContent();
   }, targetUrl);
-  assert.match(await page.locator('.start-hint').textContent(), /Präsentationsfenster/);
+  assert.match(await page.locator('.start-hint').first().textContent(), /Präsentationsfenster/);
 
   const [ref] = await Promise.all([ctx.waitForEvent('page'), page.getByRole('button', { name: '▶ Präsentieren', exact: true }).click()]);
   await ref.waitForSelector('.presenter');
@@ -78,16 +82,22 @@ try {
   await ref.locator('.pv-thumb').nth(3).click();
   const before = await position();
   const [web] = await Promise.all([ctx.waitForEvent('page'), ref.locator('.link-target').click()]);
+  // Im echten Browser verliert die Referentenansicht den Fokus an das neue Website-Fenster.
+  await ref.evaluate(() => dispatchEvent(new Event('blur')));
   await web.waitForURL(targetUrl);
-  assert.equal((await windowOf(web)).windowId, main.windowId, 'Website ist ein Tab im Praesentationsfenster');
-  assert.equal(await web.evaluate(() => window.frameElement), null, 'keine Einbettung');
+  const webWindow = await windowOf(web);
+  assert.notEqual(webWindow.windowId, main.windowId, 'Website liegt nicht im Praesentationsfenster');
+  assert.equal(webWindow.bounds.left, 0, 'Website-Fenster liegt auf dem Laptop');
   assert.equal(await page.evaluate(() => window.app.show.webLink), 'Meine Website');
+  await page.waitForFunction(() => { const v = document.querySelector('.stage-web'); return !v.hidden && v.videoWidth > 0; });
+  assert.ok(await fullscreen(), 'Folienfenster bleibt im Vollbild');
+  assert.equal(await page.evaluate(() => document.hidden), false, 'SlideDesk-Tab bleibt sichtbar');
   assert.equal(await page.evaluate(() => window.app.show.visibleKey()), null, 'verdeckte Folien werden nicht gezaehlt');
   assert.match(await ref.locator('.pv-label.live').textContent(), /Hintergrund/);
   await web.getByRole('link', { name: 'Zum Modell' }).click();
   await web.getByLabel('Arbeitsstand').fill('Nicht verlieren');
 
-  // Der Tabwechsel beendet im Browser das Vollbild; die Rueckkehr holt es ueber die Referentenansicht zurueck.
+  // Hat der Beamer das Vollbild verloren, holt die Rueckkehr es ueber die Referentenansicht zurueck.
   await page.evaluate(() => document.exitFullscreen());
   await page.waitForFunction(() => !document.fullscreenElement);
   await ref.getByRole('button', { name: 'Zurück zu Folien', exact: true }).click();
@@ -98,10 +108,13 @@ try {
 
   const count = ctx.pages().length;
   await ref.locator('.link-target').click();
+  await ref.evaluate(() => dispatchEvent(new Event('blur')));
   await page.waitForFunction(() => window.app.show.webLink === 'Meine Website');
-  assert.equal(ctx.pages().length, count, 'erneuter Klick holt denselben Tab');
+  assert.equal(ctx.pages().length, count, 'erneuter Klick holt dasselbe Fenster');
   assert.equal(await web.getByLabel('Arbeitsstand').inputValue(), 'Nicht verlieren');
   assert.equal(new URL(web.url()).pathname, '/model', 'Navigation innerhalb der Website bleibt erhalten');
+  await ref.evaluate(() => dispatchEvent(new Event('focus')));
+  assert.equal(await page.evaluate(() => window.app.show.webLink), null, 'Referentenansicht vorn: Beamer zeigt die Folie');
 
   // F in der Referentenansicht bringt ebenfalls das Vollbild zurueck.
   await page.evaluate(() => document.exitFullscreen());
@@ -110,24 +123,20 @@ try {
   await ref.keyboard.press('f');
   await page.waitForFunction(() => !!document.fullscreenElement);
 
-  // Geaenderter Link oeffnet einen neuen Tab im selben Fenster; der alte bleibt offen.
-  // Ohne Pop-up-Freigabe blockiert das Hauptfenster, dann oeffnet die angeklickte Referentenansicht.
-  await page.evaluate(() => {
-    const open = window.open;
-    window.open = (url, name, ...rest) => (String(name).startsWith('slidedesk-web-') ? null : open.call(window, url, name, ...rest));
-  });
+  // Geaenderter Link oeffnet ein neues Website-Fenster; das alte bleibt offen.
   await ref.getByRole('button', { name: 'Bearbeiten', exact: true }).click();
   await ref.getByLabel('Link', { exact: true }).fill(targetUrl + '?neu');
   await ref.getByRole('button', { name: 'Änderungen speichern', exact: true }).click();
   const [web2] = await Promise.all([ctx.waitForEvent('page'), ref.locator('.link-target').click()]);
+  await ref.evaluate(() => dispatchEvent(new Event('blur')));
   await web2.waitForURL(targetUrl + '?neu');
-  assert.equal((await windowOf(web2)).windowId, main.windowId);
+  assert.notEqual((await windowOf(web2)).windowId, main.windowId);
   assert.equal(web.isClosed(), false);
 
   await page.evaluate(() => window.app.show.stop());
   assert.equal(await page.evaluate(() => window.name), '', 'Fenstername nach dem Ende zurueckgesetzt');
   assert.deepEqual(errors, []);
-  console.log('ALLES OK: ein Praesentationsfenster, Website als Tab, Rueckkehr mit Vollbild, Tab ohne Neuladen, Filmstreifen sichtbar');
+  console.log('ALLES OK: ein Praesentationsfenster, Website auf dem Laptop mit Live-Bild, Rueckkehr mit Vollbild, Fenster ohne Neuladen, Filmstreifen sichtbar');
 } catch (error) {
   process.exitCode = 1;
   console.error('FEHLER', error.stack);

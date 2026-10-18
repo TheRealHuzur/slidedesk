@@ -186,7 +186,9 @@ export class StageView {
         h(doc, 'p', 'Dieses Fenster auf den Beamer ziehen und dann hier klicken oder F drücken.'),
         h(doc, 'button.btn.primary', { onclick: () => this.goFullscreen() }, 'Vollbild')));
     this.cornerHint = h(doc, 'div.stage-corner', 'F: Vollbild');
-    this.root = h(doc, 'div.stage', this.slide.el, this.loadingEl, this.hint, this.cornerHint);
+    // Live-Bild des Laptop-Bildschirms, solange dort eine Website gezeigt wird.
+    this.web = h(doc, 'video.stage-web', { muted: true, autoplay: true, playsInline: true, hidden: true });
+    this.root = h(doc, 'div.stage', this.slide.el, this.web, this.loadingEl, this.hint, this.cornerHint);
     this.root.addEventListener('click', (e) => {
       if (!this.isFullscreen() && !this.popup && !e.target.closest('.overlay-host')) this.goFullscreen();
     });
@@ -220,6 +222,13 @@ export class StageView {
 
   isFullscreen() { return !!this.doc.fullscreenElement; }
 
+  setCapture(stream) {
+    if (this.web.srcObject === (stream || null)) return;
+    this.web.srcObject = stream || null;
+    if (stream) this.web.play().catch(() => {});
+    this.update();
+  }
+
   /** Wird gebraucht, wenn keine Referentenansicht (mehr) da ist. */
   enableOverlays() {
     if (!this.overlays) this.overlays = new OverlayManager(this.doc, this.overlayHost, this.show, this.lib);
@@ -242,6 +251,7 @@ export class StageView {
     s.stageFullscreen = fs;
     this.hint.hidden = fs || !(this.popup || s.mode === 'dual');
     this.cornerHint.hidden = fs || this.popup || s.mode === 'dual';
+    this.web.hidden = !(s.webLink && this.web.srcObject);
     this.slide.show(s.loading ? null : s.live(), s.paused ? Z1 : s.zoom);
   }
 
@@ -251,6 +261,7 @@ export class StageView {
     this.offNote?.();
     this.overlays?.destroy();
     this.slide.destroy();
+    this.web.srcObject = null;
     this.doc.removeEventListener('keydown', this.onKey);
     this.doc.removeEventListener('fullscreenchange', this.onFs);
     this.root.remove();

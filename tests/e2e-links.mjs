@@ -4,7 +4,7 @@ import { chromium, server, BASE, seed, ablageFiles, readData, SHOTS } from './he
 import { setupSeminar } from './setup.mjs';
 
 const srv = await server();
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
 const page = await ctx.newPage();
 const errors = [];
@@ -138,9 +138,8 @@ try {
     ctx.waitForEvent('page'),
     presenter.getByRole('link', { name: /^p x 123/ }).click(),
   ]);
-  await target.waitForLoadState();
-  assert.equal(target.url(), BASE + 'hilfe.html?live=1#tasten');
-  assert.equal(await target.evaluate(() => window.opener === null), true);
+  await target.waitForURL(BASE + 'hilfe.html?live=1#tasten');
+  assert.equal(await page.evaluate(() => window.app.show.webLink), 'p x 123', 'Beamer zeigt das Live-Bild der Website');
   await target.close(); await page.bringToFront();
   assert.deepEqual(await state(), before, 'Oeffnen und manueller Rueckwechsel erhalten die Praesentation');
   await presenter.locator('.link-row').last().getByRole('button', { name: 'Bearbeiten', exact: true }).click();

@@ -1,4 +1,4 @@
-// App-Stand: a48b1e2d9c10
+// App-Stand: 633ba5c9e786
 // Service Worker: haelt die App fuer den Offline-Betrieb vor.
 // Die Dateiliste und Version stehen in assets.json (erzeugt mit scripts/build-assets.mjs).
 // CMaps (nur fuer seltene Schriften noetig) werden bei Bedarf nachgeladen und dann ebenfalls gespeichert.

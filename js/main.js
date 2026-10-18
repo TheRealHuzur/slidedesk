@@ -12,7 +12,7 @@ import { linksPanel } from './links.js';
 
 const d = document;
 const $app = d.getElementById('app');
-const VERSION = '1.2.1';
+const VERSION = '1.3.0';
 
 // ---------- Theme ----------
 function getTheme() { try { return localStorage.getItem('sd-theme') || 'dark'; } catch { return 'dark'; } }
@@ -289,8 +289,8 @@ class App {
         scr.append(' ', btn('Bildschirme prüfen', async () => { await this.launcher.requestScreens(); this.refreshStartBox(sem); }, 'small ghost'));
       }
       const layout = this.launcher.dualLayout();
-      if (layout?.kind === 'window') scr.append(h(d, 'div.start-hint', 'Dieses Fenster liegt auf dem Beamer und wird das Präsentationsfenster. Websites öffnen hier als Tab, die Referentenansicht auf dem Laptop.'));
-      else if (layout && sem.links?.length) scr.append(h(d, 'div.start-hint', 'Tipp für Websites: dieses Fenster vor dem Start auf den Beamer ziehen und maximieren. Dann laufen Folien und Websites dort in einem Fenster.'));
+      if (layout?.kind === 'window') scr.append(h(d, 'div.start-hint', 'Dieses Fenster liegt auf dem Beamer und wird das Präsentationsfenster, die Referentenansicht öffnet sich auf dem Laptop.'));
+      if (sem.links?.length) scr.append(h(d, 'div.start-hint', 'Websites öffnen auf dem Laptop und erscheinen als Live-Bild auf dem Beamer. Beim ersten Link „Gesamter Bildschirm“ und den Laptop wählen.'));
     }
     box.replaceChildren(
       h(d, 'div.seg', seg('mirror', 'Gespiegelt', 'Überall dasselbe Bild (Windows: Win + P, Duplizieren)'), seg('dual', 'Zwei Bildschirme', 'Beamer zeigt die Folie, der Laptop die Referentenansicht (Windows: Win + P, Erweitern)')),
