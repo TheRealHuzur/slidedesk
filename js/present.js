@@ -14,6 +14,8 @@ import { webUrl } from './links.js';
 const POPUP_URL = new URL('../fenster.html', import.meta.url).href;
 const STAGE_NAME = 'slidedesk-praesentation';
 const FULLSCREEN_MSG = 'slidedesk-vollbild';
+// Das Blocker-Symbol erscheint im Fenster, das oeffnen wollte; im Vollbild ist es nicht zu sehen.
+const POPUP_HELP = 'Pop-ups für SlideDESK freigeben: in der Referentenansicht oder im SlideDESK-Fenster links neben der Adresse auf das Symbol klicken, „Website-Einstellungen“ öffnen und „Pop-ups und Weiterleitungen“ auf „Zulassen“ stellen.';
 
 export class Launcher {
   constructor(app) {
@@ -129,7 +131,7 @@ export class Launcher {
       if (!pop) {
         this.cleanup();
         this.show.active = false;
-        return 'Das Fenster für die Referentenansicht wurde blockiert. Bitte Pop-ups für SlideDESK erlauben (Symbol rechts in der Adressleiste) und noch einmal starten.';
+        return `Das Fenster für die Referentenansicht wurde blockiert. ${POPUP_HELP} Dann noch einmal starten.`;
       }
       this.popups.referent = pop;
       this.hookCommon();
@@ -160,7 +162,7 @@ export class Launcher {
 
   openStagePopup() {
     const pop = window.open(POPUP_URL + '#buehne', 'slidedesk-buehne', 'popup=yes,width=1280,height=720');
-    if (!pop) { this.show.emit('notice', 'Beamerfenster blockiert. Bitte Pop-ups für SlideDESK erlauben.'); return; }
+    if (!pop) { this.show.emit('notice', `Das Beamerfenster wurde blockiert. ${POPUP_HELP}`); return; }
     this.popups.buehne = pop;
     this.waitReady(pop).then((w) => {
       if (!this.show.active) return;
@@ -226,7 +228,7 @@ export class Launcher {
     // Die Buehne ist der Oeffner: auch ohne Bildschirmerkennung liegt das neue Fenster bei ihr.
     const popup = stageWindow.open('about:blank', '_blank', features);
     if (!popup) {
-      this.show.emit('notice', 'Das Browserfenster wurde blockiert. Bitte Pop-ups für SlideDesk erlauben und den Link erneut anklicken.');
+      this.show.emit('notice', `Das Browserfenster wurde blockiert. ${POPUP_HELP} Dann den Link erneut anklicken.`);
       return;
     }
     try {
@@ -271,7 +273,7 @@ export class Launcher {
     // oeffnet die angeklickte Referentenansicht; der Tab landet dann im zuletzt aktiven Browserfenster.
     const tab = window.open(url, name) || (source !== window ? source.open(url, name) : null);
     if (!tab) {
-      this.show.emit('notice', 'Der Tab wurde blockiert. Bitte Pop-ups für SlideDesk erlauben und den Link erneut anklicken.');
+      this.show.emit('notice', `Der Tab wurde blockiert. ${POPUP_HELP} Dann den Link erneut anklicken.`);
       return;
     }
     this.webWindows.set(key, { window: tab, url, name });

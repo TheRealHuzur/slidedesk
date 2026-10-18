@@ -1,6 +1,6 @@
 {
   "name": "slidedesk",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Seminar-PDFs komfortabel präsentieren, offline im Browser. Teil der DESK Suite.",
   "scripts": {
     "vendor": "bash scripts/vendor.sh",
