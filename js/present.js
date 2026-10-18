@@ -3,6 +3,8 @@
 // Gespiegelt:          Hauptfenster wird Buehne im Vollbild (Windows dupliziert das Bild).
 // Zwei Bildschirme A:  Mit Erlaubnis zur Fensterverwaltung geht das Hauptfenster als Buehne
 //                      ins Vollbild auf den Beamer, die Referentenansicht oeffnet sich auf dem Laptop.
+//                      Liegt das Hauptfenster schon vor dem Start auf dem Beamer, bleibt es dort das
+//                      einzige Praesentationsfenster: Websites oeffnen als Tabs in diesem Fenster.
 // Zwei Bildschirme B:  Ohne diese Erlaubnis bleibt das Hauptfenster Referentenansicht und ein
 //                      Beamerfenster oeffnet sich, das man auf den Beamer zieht.
 
@@ -10,6 +12,8 @@ import { StageView, PresenterView } from './views.js';
 import { webUrl } from './links.js';
 
 const POPUP_URL = new URL('../fenster.html', import.meta.url).href;
+const STAGE_NAME = 'slidedesk-praesentation';
+const FULLSCREEN_MSG = 'slidedesk-vollbild';
 
 export class Launcher {
   constructor(app) {
@@ -20,6 +24,11 @@ export class Launcher {
     this.popups = {};
     this.ready = new Map();
     this.webWindows = new Map();
+    this.webCount = 0;
+    this.webTabs = false;
+    window.addEventListener('message', (e) => {
+      if (e.origin === location.origin && e.data === FULLSCREEN_MSG) this.onFullscreenDelegated();
+    });
     window.__slidedeskReady = (w) => {
       for (const [win, res] of this.ready) if (win === w) { this.ready.delete(win); res(w); }
     };
@@ -43,6 +52,7 @@ export class Launcher {
     this.screens = await window.getScreenDetails();
     this.screenPerm = 'granted';
     this.screens.addEventListener('screenschange', () => this.app.onScreensChanged?.());
+    this.screens.addEventListener('currentscreenchange', () => this.app.onScreensChanged?.());
     this.app.onScreensChanged?.();
     return this.screens;
   }
@@ -63,6 +73,20 @@ export class Launcher {
       text: `${list.length} Bildschirm${list.length === 1 ? '' : 'e'} erkannt: ` +
         list.map((s) => `${s.label || (s.isInternal ? 'Laptop' : 'Bildschirm')} ${s.width}×${s.height}`).join(', '),
     };
+  }
+
+  /**
+   * Aufteilung im Zwei-Bildschirm-Modus mit Bildschirmerkennung, sonst null (Variante B).
+   * 'window': dieses Fenster liegt auf dem Beamer und bleibt dort; 'move': es geht im Vollbild hinueber.
+   */
+  dualLayout() {
+    const sd = this.screens;
+    const cur = sd?.currentScreen;
+    const others = sd ? sd.screens.filter((s) => s !== cur) : [];
+    if (!sd || !others.length) return null;
+    const laptop = others.find((s) => s.isInternal);
+    if (cur && !cur.isInternal && laptop) return { kind: 'window', stage: cur, presenter: laptop };
+    return { kind: 'move', stage: others.find((s) => !s.isInternal) || others[0], presenter: cur };
   }
 
   waitReady(win) {
@@ -89,18 +113,18 @@ export class Launcher {
   }
 
   startDual(sem, prepPromise) {
-    const sd = this.screens;
-    const cur = sd?.currentScreen;
-    const others = sd ? sd.screens.filter((s) => s !== cur) : [];
-    if (sd && others.length) {
-      // Variante A: Hauptfenster als Buehne auf den Beamer, Referentenansicht auf den Laptop.
-      const beamer = others.find((s) => !s.isInternal) || others[0];
-      this.presentationScreen = beamer;
+    const layout = this.dualLayout();
+    if (layout) {
+      // Variante A: Hauptfenster als Buehne auf dem Beamer, Referentenansicht auf dem Laptop.
+      this.presentationScreen = layout.stage;
+      this.webTabs = layout.kind === 'window';
       this.show.start(sem, 'dual', prepPromise);
-      const stage = new StageView(document, this.show, this.lib, { fsOpts: { screen: beamer } });
+      // Mit Bildschirmangabe verbraucht das Vollbild den Klick nicht; die Referentenansicht darf danach aufgehen.
+      const stage = new StageView(document, this.show, this.lib, { fsOpts: { screen: layout.stage } });
       this.views = { stage };
       stage.goFullscreen();
-      const feat = `popup=yes,left=${cur.availLeft},top=${cur.availTop},width=${cur.availWidth},height=${cur.availHeight}`;
+      const p = layout.presenter;
+      const feat = `popup=yes,left=${p.availLeft},top=${p.availTop},width=${p.availWidth},height=${p.availHeight}`;
       const pop = window.open(POPUP_URL + '#referent', 'slidedesk-referent', feat);
       if (!pop) {
         this.cleanup();
@@ -109,8 +133,11 @@ export class Launcher {
       }
       this.popups.referent = pop;
       this.hookCommon();
+      if (this.webTabs) this.watchStageTab();
       this.waitReady(pop).then((w) => {
         if (!this.show.active) return;
+        // Die Groesse beim Oeffnen gilt dem Inhalt; das ganze Fenster soll in den Arbeitsbereich passen.
+        try { w.moveTo(p.availLeft, p.availTop); w.resizeTo(p.availWidth, p.availHeight); } catch {}
         this.views.presenter = new PresenterView(w.document, this.show, this.lib, {
           stageNote: () => this.stageNote(), onOpenLink: (link, source) => this.openWebLink(link, source),
         });
@@ -153,12 +180,16 @@ export class Launcher {
   /** Hinweis in der Referentenansicht, wenn der Beamer nicht sauber im Vollbild ist. */
   stageNote() {
     if (this.show.webLink) return {
-      text: `Website „${this.show.webLink}“ auf dem Präsentationsbildschirm.`,
+      text: `„${this.show.webLink}“ wird auf dem Präsentationsbildschirm gezeigt.`,
       action: { label: 'Zurück zu Folien', fn: () => this.returnToSlides() },
     };
     const st = this.views.stage;
     if (!st) return { text: 'Das Beamerfenster ist geschlossen.', action: { label: 'Beamerfenster öffnen', fn: () => this.openStagePopup() } };
     if (!st.isFullscreen()) {
+      if (this.webTabs) return {
+        text: 'Die Folien sind auf dem Beamer nicht im Vollbild.',
+        action: { label: 'Vollbild', fn: () => this.returnToSlides() },
+      };
       return {
         text: st.popup
           ? 'Beamerfenster auf den Beamer ziehen und dort auf „Vollbild“ klicken.'
@@ -168,10 +199,11 @@ export class Launcher {
     return null;
   }
 
-  /** Webinhalt als echtes Browserfenster auf dem Bildschirm der PDF-Buehne zeigen. */
-  openWebLink(link) {
+  /** Webinhalt auf dem Bildschirm der PDF-Buehne zeigen: als Tab im Praesentationsfenster oder als eigenes Fenster. */
+  openWebLink(link, source = window) {
     const url = webUrl(link.url);
     if (!url || !this.show.active || this.show.mode !== 'dual') return;
+    if (this.webTabs) { this.openWebTab(link, url, source); return; }
     const stageWindow = this.views.stage?.doc.defaultView;
     if (!stageWindow || stageWindow.closed) {
       this.show.emit('notice', 'Bitte zuerst das Beamerfenster öffnen und auf den Präsentationsbildschirm ziehen.');
@@ -211,15 +243,81 @@ export class Launcher {
     }
     this.webWindows.set(key, { window: popup, url });
     this.show.setWebLink(link.name);
+    if (this.presentationScreen && !this.tabHintShown) {
+      this.tabHintShown = true;
+      this.show.emit('notice', 'Tipp: Liegt das SlideDesk-Fenster schon vor dem Start auf dem Beamer, öffnen Websites dort als Tab im selben Fenster.');
+    }
     this.offWebFocus?.();
     const returned = () => { if (this.show.active && this.show.webLink) this.show.setWebLink(null); };
     stageWindow.addEventListener('focus', returned);
     this.offWebFocus = () => stageWindow.removeEventListener('focus', returned);
   }
 
+  /**
+   * Website als Tab im Praesentationsfenster. Der Tab behaelt seinen Oeffner, damit ihn ein erneuter
+   * Klick ueber seinen Namen ohne Neuladen nach vorn holen kann.
+   */
+  openWebTab(link, url, source) {
+    const key = link.id || url;
+    const existing = this.webWindows.get(key);
+    if (existing?.url === url && !existing.window.closed) {
+      // Der benannte Aufruf aus der angeklickten Referentenansicht holt den Tab nach vorn.
+      const found = source.open('', existing.name);
+      if (found === existing.window) { this.show.setWebLink(link.name); return; }
+      try { found?.close(); } catch {}
+    }
+    const name = `slidedesk-web-${++this.webCount}`;
+    // Ohne Fensterangaben oeffnet der Browser einen Tab im Fenster der Buehne. Ohne Pop-up-Freigabe
+    // oeffnet die angeklickte Referentenansicht; der Tab landet dann im zuletzt aktiven Browserfenster.
+    const tab = window.open(url, name) || (source !== window ? source.open(url, name) : null);
+    if (!tab) {
+      this.show.emit('notice', 'Der Tab wurde blockiert. Bitte Pop-ups für SlideDesk erlauben und den Link erneut anklicken.');
+      return;
+    }
+    this.webWindows.set(key, { window: tab, url, name });
+    this.show.setWebLink(link.name);
+  }
+
+  /** Solange der SlideDesk-Tab verdeckt ist, zeigt das Praesentationsfenster etwas anderes. */
+  watchStageTab() {
+    this.prevName = window.name;
+    window.name = STAGE_NAME;
+    const onVisibility = () => {
+      if (!this.show.active) return;
+      if (document.hidden) { if (!this.show.webLink) this.show.setWebLink('Anderer Browser-Tab'); }
+      else if (this.show.webLink) this.show.setWebLink(null);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    this.offStageTab = () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.name = this.prevName;
+    };
+  }
+
+  /** Vollbild-Erlaubnis aus einem Klick in der Referentenansicht; wartet, bis der Tab sichtbar ist. */
+  onFullscreenDelegated() {
+    const stage = this.views.stage;
+    if (!this.show.active || stage?.doc !== document) return;
+    if (!document.hidden) { stage.goFullscreen(); return; }
+    const done = () => { clearTimeout(timer); document.removeEventListener('visibilitychange', done); stage.goFullscreen(); };
+    const timer = setTimeout(done, 1500);
+    document.addEventListener('visibilitychange', done);
+  }
+
   returnToSlides() {
     const stage = this.views.stage;
     if (!stage) { this.show.setWebLink(null); this.openStagePopup(); return; }
+    if (this.webTabs) {
+      // Nur die angeklickte Referentenansicht darf den SlideDesk-Tab nach vorn holen und das Vollbild uebergeben.
+      const presenter = this.views.presenter?.doc.defaultView;
+      if (presenter && !presenter.closed) {
+        presenter.open('', STAGE_NAME);
+        presenter.__slidedeskFullscreen?.(window);
+      }
+      // Bleibt der Tab verdeckt, setzt der Sichtbarkeitswechsel die Rueckkehr spaeter.
+      if (!document.hidden) this.show.setWebLink(null);
+      return;
+    }
     stage.doc.defaultView.focus();
     this.show.setWebLink(null);
     stage.goFullscreen();
@@ -249,12 +347,15 @@ export class Launcher {
       if (!st) return;
       const fromStage = e?.view === st.doc.defaultView || e?.target?.ownerDocument === st.doc;
       if (fromStage) st.goFullscreen();
+      else if (this.webTabs) this.returnToSlides();
       else this.show.emit('notice', 'Vollbild für den Beamer: das Beamer- bzw. Hauptfenster anklicken und dort F drücken.');
     });
   }
 
   cleanup() {
     this.offWebFocus?.(); this.offWebFocus = null;
+    this.offStageTab?.(); this.offStageTab = null;
+    this.webTabs = false;
     this.presentationScreen = null;
     // Websites offen lassen, damit dort bearbeitete Inhalte erhalten bleiben.
     this.webWindows.clear();

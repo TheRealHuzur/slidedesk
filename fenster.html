@@ -10,6 +10,10 @@
     // Zusatzfenster fuer Beamer oder Referentenansicht. Der Inhalt kommt vollstaendig aus dem Hauptfenster.
     try { document.documentElement.dataset.theme = localStorage.getItem('sd-theme') || 'dark'; } catch (e) {}
     document.title = location.hash === '#buehne' ? 'SlideDESK Beamer' : 'SlideDESK Referentenansicht';
+    // Gibt die Vollbild-Erlaubnis eines Klicks hier an das Praesentationsfenster weiter.
+    window.__slidedeskFullscreen = function (target) {
+      try { target.postMessage('slidedesk-vollbild', { targetOrigin: location.origin, delegate: 'fullscreen' }); } catch (e) {}
+    };
     addEventListener('load', function () {
       if (window.opener && window.opener.__slidedeskReady) window.opener.__slidedeskReady(window);
       else document.body.textContent = 'Dieses Fenster wird von SlideDESK geöffnet und kann geschlossen werden.';

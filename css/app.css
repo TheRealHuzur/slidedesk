@@ -143,6 +143,7 @@ a.btn { text-decoration: none; }
 .start-box { display: grid; grid-template-columns: auto auto; gap: 8px 12px; align-items: center; justify-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
 .start-status, .start-screens { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
 .start-screens:empty { display: none; }
+.start-hint { margin-top: 4px; color: var(--accent); }
 .seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
 .seg-btn { border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); }
 .seg-btn.on { background: var(--accent); color: #fff; }
@@ -163,6 +164,8 @@ a.btn { text-decoration: none; }
 .presenter .seminar-links .card-head { margin-bottom: 8px; }
 .pv-col-next { overflow-y: auto; }
 .pv-col-next > * { flex-shrink: 0; }
+/* Bei knapper Hoehe gibt zuerst die Vorschau nach, damit Schnelltasten und Links sichtbar bleiben. */
+.pv-col-next > .pv-preview { flex-shrink: 1; min-height: 140px; }
 
 /* Playlist */
 .pl-list { display: flex; flex-direction: column; gap: 6px; }
@@ -319,15 +322,16 @@ body.presenting { overflow: hidden; }
 .ov-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
 /* Referentenansicht */
-.presenter { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: auto auto 1fr auto; background: var(--bg); color: var(--text); }
-.pv-head { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+/* Feste Zeilen: die ausgeblendete Warnleiste darf Hauptbereich und Filmstreifen nicht verschieben. */
+.presenter { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; background: var(--bg); color: var(--text); }
+.pv-head { grid-row: 1; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
 .pv-title { font-weight: 600; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pv-badge { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
 .pv-badge.pause { background: rgba(245, 158, 11, .18); color: var(--warn); }
 .pv-clock { font-size: 22px; font-weight: 700; color: var(--text-strong); font-variant-numeric: tabular-nums; }
 .pv-elapsed { color: var(--muted); font-variant-numeric: tabular-nums; }
-.pv-warn { background: rgba(245, 158, 11, .14); color: var(--warn); padding: 8px 16px; font-size: 14px; display: flex; gap: 12px; align-items: center; }
-.pv-main { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; padding: 14px 16px 8px; min-height: 0; }
+.pv-warn { grid-row: 2; background: rgba(245, 158, 11, .14); color: var(--warn); padding: 8px 16px; font-size: 14px; display: flex; gap: 12px; align-items: center; }
+.pv-main { grid-row: 3; display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 16px; padding: 14px 16px 8px; min-height: 0; }
 .pv-col { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .pv-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .pv-label.live .dot { width: 8px; height: 8px; border-radius: 99px; background: var(--err); box-shadow: 0 0 0 3px rgba(239,68,68,.2); }
@@ -347,7 +351,7 @@ body.presenting { overflow: hidden; }
 .pv-hk { display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 4px 8px; font-size: 12px; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pv-hk.free { opacity: .45; cursor: default; }
 .pv-hk kbd { color: var(--accent); border-color: var(--accent); }
-.pv-strip { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px 12px; background: var(--panel); border-top: 1px solid var(--line); align-items: center; }
+.pv-strip { grid-row: 4; display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px 12px; background: var(--panel); border-top: 1px solid var(--line); align-items: center; }
 .pv-strip-title { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 11px; color: var(--muted); max-height: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pv-thumb { position: relative; flex: 0 0 auto; width: 150px; aspect-ratio: 16 / 9; background: #000; border: 2px solid transparent; border-radius: 7px; padding: 0; cursor: pointer; overflow: hidden; }
 .pv-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }

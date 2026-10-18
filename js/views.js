@@ -21,18 +21,19 @@ export class SlideCanvas {
     this.zoom = { ...Z1 };
     this.rendered = null;
     this.seq = 0;
-    this.crisp = debounce(() => this.renderNow(), 150);
+    // Verzoegerte Aufrufe duerfen nach dem Schliessen des Fensters nicht mehr zeichnen.
+    this.crisp = debounce(() => { if (!this.destroyed) this.renderNow(); }, 150);
     const W = doc.defaultView;
-    this.ro = new W.ResizeObserver(debounce(() => { this.rendered = null; this.renderNow(); }, 60));
+    this.ro = new W.ResizeObserver(debounce(() => { if (this.destroyed) return; this.rendered = null; this.renderNow(); }, 60));
     this.ro.observe(this.el);
     if (interactive) this.bindInteraction(interactive);
   }
 
-  destroy() { this.ro.disconnect(); this.seq++; }
+  destroy() { this.destroyed = true; this.ro.disconnect(); this.seq++; }
 
   box() {
     const r = this.el.getBoundingClientRect();
-    return { w: r.width, h: r.height, dpr: this.doc.defaultView.devicePixelRatio || 1 };
+    return { w: r.width, h: r.height, dpr: this.doc.defaultView?.devicePixelRatio || 1 };
   }
   devSize() { const b = this.box(); return { w: Math.round(b.w * b.dpr), h: Math.round(b.h * b.dpr) }; }
 
@@ -373,7 +374,7 @@ export class PresenterView {
     } else if (it) {
       this.liveInfo.textContent = `${it.title} · Folie ${s.pos.p} von ${it.pages} · gesamt ${s.globalIndex()} von ${s.totalSlides()}${s.zoom.z > 1 ? ` · Zoom ${Math.round(s.zoom.z * 100)} %` : ''}`;
     }
-    if (s.webLink) this.liveInfo.textContent = `Website „${s.webLink}“ wird gezeigt. Diese Folie bleibt für die Rückkehr geöffnet.`;
+    if (s.webLink) this.liveInfo.textContent = `„${s.webLink}“ wird gezeigt. Diese Folie bleibt für die Rückkehr geöffnet.`;
     const pv = s.preview();
     this.preview.show(pv.ref);
     this.preview.el.classList.toggle('cued', pv.cued);

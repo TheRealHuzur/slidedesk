@@ -19,12 +19,17 @@ SlideDESK legt in der Ablage einen Ordner `SlideDESK/slidedesk.json` an. Darin s
 
 Im Bereich **Links** über **+ Link hinzufügen** einen eigenen Namen und die vollständige Webadresse eintragen. Die Einträge lassen sich bearbeiten, löschen und mit den Pfeilen sortieren. Für das nächste Webinar einfach die benötigten Links austauschen.
 
-In der Seminarverwaltung öffnet ein Klick auf den Namen die Website in einem neuen Browser-Tab bzw. gemäß Browsereinstellung. Während einer Zwei-Bildschirm-Präsentation öffnet der Link ein eigenes Browserfenster auf dem Präsentationsbildschirm. Die PDF-Bühne bleibt im Hintergrund geöffnet. Über **Zurück zu Folien** in der Referentenansicht erscheint dieselbe Folie wieder; eine vorgehörte Folie bleibt erhalten. Ein erneuter Linkklick verwendet ein noch erreichbares Webfenster weiter, einschließlich der dortigen Navigation. In der Referentenansicht ist dieselbe Linkliste verfügbar und bearbeitbar. Die Links werden mit dem Seminar gespeichert und über die vorhandene Ablage synchronisiert. Anmeldung und Navigation erfolgen normal auf der geöffneten Website. Eine Browser-Erweiterung ist nicht nötig. Pop-ups müssen für SlideDesk erlaubt sein. Bei einem von Hand platzierten Beamerfenster folgt das Webfenster dessen Position. Die Zeit mit einer externen Website wird nicht als zusätzlich gezeigte PDF-Zeit protokolliert. Bei einem Online-Webinar den Präsentationsbildschirm teilen; eine Freigabe nur des PDF-Fensters überträgt ein anderes Browserfenster nicht automatisch.
+In der Seminarverwaltung öffnet ein Klick auf den Namen die Website in einem neuen Browser-Tab bzw. gemäß Browsereinstellung. Während einer Zwei-Bildschirm-Präsentation erscheint die Website auf dem Präsentationsbildschirm:
+
+- **Ein Präsentationsfenster (empfohlen):** Liegt das SlideDesk-Fenster schon vor dem Start auf dem Beamer, bleibt es dort. Folien laufen im Vollbild, Websites öffnen als normale Tabs mit Adress- und Lesezeichenleiste im selben Fenster. Die Referentenansicht öffnet sich auf dem Laptop.
+- **Sonst:** Die Website öffnet ein eigenes Browserfenster auf dem Präsentationsbildschirm; die PDF-Bühne bleibt im Hintergrund geöffnet.
+
+Über **Zurück zu Folien** oder F in der Referentenansicht erscheint dieselbe Folie wieder im Vollbild; eine vorgehörte Folie bleibt erhalten. Ein erneuter Linkklick holt einen noch offenen Tab bzw. ein erreichbares Webfenster samt Navigation wieder nach vorn. Website-Tabs behalten dafür die Verbindung zu SlideDesk (Opener). In der Referentenansicht ist dieselbe Linkliste verfügbar und bearbeitbar. Die Links werden mit dem Seminar gespeichert und über die vorhandene Ablage synchronisiert. Anmeldung und Navigation erfolgen normal auf der geöffneten Website. Eine Browser-Erweiterung ist nicht nötig. Pop-ups müssen für SlideDesk erlaubt sein. Bei einem von Hand platzierten Beamerfenster folgt das Webfenster dessen Position. Die Zeit mit einer externen Website wird nicht als zusätzlich gezeigte PDF-Zeit protokolliert. Bei einem Online-Webinar den Präsentationsbildschirm teilen; eine Freigabe nur des PDF-Fensters überträgt ein anderes Browserfenster nicht automatisch.
 
 ## Präsentationsmodi
 
 - **Gespiegelt:** Windows dupliziert das Bild (Win + P, „Duplizieren“). Alles läuft im Vollbild auf beiden Bildschirmen.
-- **Zwei Bildschirme:** Windows auf „Erweitern“ stellen (Win + P). Beim ersten Mal fragt der Browser nach der Fensterverwaltung, eventuell auch nach Pop-ups. Dann legt SlideDESK die Folie selbst auf den Beamer und die Referentenansicht auf den Laptop. Ohne diese Erlaubnis öffnet sich ein Beamerfenster, das man auf den Beamer zieht und dort auf „Vollbild“ klickt.
+- **Zwei Bildschirme:** Windows auf „Erweitern“ stellen (Win + P). Beim ersten Mal fragt der Browser nach der Fensterverwaltung, eventuell auch nach Pop-ups. Dann legt SlideDESK die Folie selbst auf den Beamer und die Referentenansicht auf den Laptop. Liegt das SlideDesk-Fenster beim Start schon auf dem Beamer, bleibt es dort als Präsentationsfenster (Folien und Website-Tabs in einem Fenster). Ohne diese Erlaubnis öffnet sich ein Beamerfenster, das man auf den Beamer zieht und dort auf „Vollbild“ klickt.
 
 **Vorhören:** Im Zwei-Bildschirm-Modus landen Übersicht, Suche, Gehe zu und Filmstreifen erst in der Vorschau auf dem Laptop. Der Beamer zeigt weiter die aktuelle Folie. Enter schickt die vorgehörte Folie auf den Beamer, Esc verwirft sie.
 
@@ -66,7 +71,7 @@ Einfach aus PowerPoint an dieselbe Stelle exportieren. SlideDESK erkennt die ge�
 npm install && npm run vendor   # PDF.js und Schrift nach vendor/ kopieren
 npm run build                   # assets.json neu erzeugen (nach jeder Änderung)
 npm start                       # lokal unter http://localhost:8080
-npm test                        # Browsertests (Playwright, headless Chromium)
+npm test                        # Browsertests (Playwright, headless Chromium, acht Suiten)
 ```
 
 Für die Browsertests werden Python mit ReportLab (`python3 -m pip install reportlab`) und Chromium (`npx playwright install chromium`) benötigt. Playwright wird über die Entwicklungsabhängigkeiten installiert.
